@@ -1,0 +1,184 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-surface-200 dark:border-surface-700;
+  }
+
+  body {
+    @apply bg-surface-50 text-surface-700 dark:bg-surface-950 dark:text-surface-300 font-sans antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-surface-300 dark:bg-surface-700 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-surface-400;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/70 dark:bg-surface-900/70 backdrop-blur-xl border border-surface-200/60 dark:border-surface-700/60 shadow-sm;
+  }
+
+  .glass-card {
+    @apply glass rounded-xl;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium
+           rounded-lg transition-all duration-200
+           hover:shadow-md active:scale-[0.97]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:active:scale-100;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent-600 text-white hover:bg-accent-700;
+  }
+
+  .btn-ghost {
+    @apply btn text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800;
+  }
+
+  .prose-preview h1 {
+    @apply text-3xl font-bold text-surface-900 dark:text-surface-50 mb-4 mt-6;
+  }
+  .prose-preview h2 {
+    @apply text-2xl font-semibold text-surface-900 dark:text-surface-50 mb-3 mt-5;
+  }
+  .prose-preview h3 {
+    @apply text-xl font-semibold text-surface-900 dark:text-surface-50 mb-2 mt-4;
+  }
+  .prose-preview p {
+    @apply mb-4 leading-relaxed;
+  }
+  .prose-preview code {
+    @apply font-mono text-sm bg-surface-100 dark:bg-surface-800 px-1.5 py-0.5 rounded;
+  }
+  .prose-preview pre {
+    @apply bg-surface-100 dark:bg-surface-900 text-surface-800 dark:text-surface-100 p-4 rounded-xl mb-4 overflow-x-auto;
+  }
+  .prose-preview pre code {
+    @apply bg-transparent px-0 py-0 text-inherit;
+  }
+  .prose-preview blockquote {
+    @apply border-l-4 border-accent-500 pl-4 italic text-surface-500 dark:text-surface-400 mb-4;
+  }
+  .prose-preview ul, .prose-preview ol {
+    @apply mb-4 pl-6;
+  }
+  .prose-preview ul {
+    @apply list-disc;
+  }
+  .prose-preview ol {
+    @apply list-decimal;
+  }
+  .prose-preview li {
+    @apply mb-1;
+  }
+  .prose-preview a {
+    @apply text-accent-600 dark:text-accent-500 underline;
+  }
+  .prose-preview table {
+    @apply w-full border-collapse mb-4;
+  }
+  .prose-preview th {
+    @apply bg-surface-100 dark:bg-surface-800 px-4 py-2 text-left font-semibold border border-surface-200 dark:border-surface-700;
+  }
+  .prose-preview td {
+    @apply px-4 py-2 border border-surface-200 dark:border-surface-700;
+  }
+  .prose-preview img {
+    @apply max-w-full rounded-lg;
+  }
+  .prose-preview hr {
+    @apply border-surface-200 dark:border-surface-700 my-6;
+  }
+}
+
+/* ============================================================
+   CodeMirror 6 外观适配
+   ============================================================ */
+
+/* 编辑器整体容器 */
+.cm-editor {
+  height: 100%;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* 亮色主题下的编辑器背景 */
+.cm-editor .cm-scroller {
+  @apply font-mono;
+  padding-top: 4px;
+}
+
+/* 光标颜色 */
+.cm-editor .cm-cursor {
+  border-left-color: #2563eb !important;
+}
+
+/* 选中文本背景色 */
+.cm-editor .cm-selectionBackground {
+  background: rgba(59, 130, 246, 0.2) !important;
+}
+
+.dark .cm-editor .cm-selectionBackground {
+  background: rgba(96, 165, 250, 0.3) !important;
+}
+
+/* 行号区域 */
+.cm-editor .cm-lineNumbers .cm-gutterElement {
+  color: #94a3b8;
+  padding: 0 12px 0 4px;
+  min-width: 40px;
+}
+
+.dark .cm-editor .cm-lineNumbers .cm-gutterElement {
+  color: #64748b;
+}
+
+/* 折叠标记 */
+.cm-editor .cm-gutters {
+  @apply bg-surface-50 dark:bg-surface-950 border-r border-surface-200 dark:border-surface-700;
+}
+
+/* 占位符文字 */
+.cm-editor .cm-placeholder {
+  color: #94a3b8 !important;
+}
+
+/* 活动行高亮 */
+.cm-editor .cm-activeLine {
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.dark .cm-editor .cm-activeLine {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+/* 滚动条在编辑器内部 */
+.cm-editor .cm-scroller::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.cm-editor .cm-scroller::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+.cm-editor .cm-scroller::-webkit-scrollbar-thumb {
+  @apply bg-surface-300 dark:bg-surface-700 rounded-full;
+}

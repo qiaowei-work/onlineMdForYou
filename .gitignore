@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build output
+frontend/dist/
+
+# Vite cache
+frontend/node_modules/.vite/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java (future)
+backend/target/
+*.class
+*.jar
+*.war
+
+# Environment
+.env
+.env.local
