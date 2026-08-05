@@ -11,6 +11,23 @@ import { trailing } from '@milkdown/kit/plugin/trailing';
 import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
 import { nord } from '@milkdown/theme-nord';
 
+// 代码块语法高亮
+import { codeBlockComponent, codeBlockConfig } from '@milkdown/kit/component/code-block';
+import { LanguageDescription } from '@codemirror/language';
+import { sql } from '@codemirror/lang-sql';
+import { javascript } from '@codemirror/lang-javascript';
+import { java } from '@codemirror/lang-java';
+import { python } from '@codemirror/lang-python';
+import { html } from '@codemirror/lang-html';
+import { css } from '@codemirror/lang-css';
+import { json } from '@codemirror/lang-json';
+import { xml } from '@codemirror/lang-xml';
+import { php } from '@codemirror/lang-php';
+import { rust } from '@codemirror/lang-rust';
+import { go } from '@codemirror/lang-go';
+import { cpp } from '@codemirror/lang-cpp';
+import { basicSetup } from 'codemirror';
+
 import { setupTableHandles } from '../plugins/tableHandles';
 import type { FormatCommand } from '../utils/formatCommands';
 
@@ -29,6 +46,23 @@ function liftBlock(view: EditorView): boolean {
   dispatch(tr);
   return true;
 }
+
+// 代码块支持的语言列表（编辑模式 CodeMirror 高亮）
+const CODE_LANGUAGES = [
+  LanguageDescription.of({ name: 'SQL', alias: ['sql'], support: sql() }),
+  LanguageDescription.of({ name: 'JavaScript', alias: ['js', 'javascript'], support: javascript() }),
+  LanguageDescription.of({ name: 'TypeScript', alias: ['ts', 'typescript'], support: javascript({ typescript: true }) }),
+  LanguageDescription.of({ name: 'Java', alias: ['java'], support: java() }),
+  LanguageDescription.of({ name: 'Python', alias: ['py', 'python'], support: python() }),
+  LanguageDescription.of({ name: 'HTML', alias: ['html'], support: html() }),
+  LanguageDescription.of({ name: 'CSS', alias: ['css'], support: css() }),
+  LanguageDescription.of({ name: 'JSON', alias: ['json'], support: json() }),
+  LanguageDescription.of({ name: 'XML', alias: ['xml'], support: xml() }),
+  LanguageDescription.of({ name: 'PHP', alias: ['php'], support: php() }),
+  LanguageDescription.of({ name: 'Rust', alias: ['rust', 'rs'], support: rust() }),
+  LanguageDescription.of({ name: 'Go', alias: ['go'], support: go() }),
+  LanguageDescription.of({ name: 'C++', alias: ['cpp', 'c++'], support: cpp() }),
+];
 
 const HEADING_LEVELS: Record<string, number> = {
   heading1: 1,
@@ -69,6 +103,14 @@ function MilkdownInner({
         ctx.set(rootCtx, root);
         ctx.set(defaultValueCtx, value);
       })
+      .config((ctx) => {
+        ctx.update(codeBlockConfig.key, (prev) => ({
+          ...prev,
+          extensions: [...prev.extensions, basicSetup],
+          languages: CODE_LANGUAGES,
+          previewOnlyByDefault: false,
+        }));
+      })
       .use(nord)
       .use(commonmark)
       .use(gfm)
@@ -76,7 +118,8 @@ function MilkdownInner({
       .use(clipboard)
       .use(indent)
       .use(trailing)
-      .use(listener);
+      .use(listener)
+      .use(codeBlockComponent);
   });
 
   // 编辑器初始化完成后注册回调和通知外部
@@ -108,6 +151,12 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
     const isInternalRef = useRef(false);
     const [editorKey, setEditorKey] = useState(0);
     const [editorReady, setEditorReady] = useState(false);
+
+    // 自定义链接输入状态
+    const [linkInput, setLinkInput] = useState<{
+      visible: boolean; from: number; to: number; top: number; left: number;
+    } | null>(null);
+    const linkUrlRef = useRef('');
 
     // 安装表格行列控件
     useEffect(() => {
@@ -204,12 +253,39 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
           return;
         }
 
+        // --- 链接输入框定位到选中文字上方 ---
+        if (cmd === 'link') {
+          const sel = view.state.selection;
+          const from = sel.from;
+          const to = sel.to;
+          if (from === to) return;
+          const container = containerRef.current;
+          if (!container) return;
+          // 用 ProseMirror domAtPos 获取文字 DOM 位置（不依赖焦点）
+          const containerRect = container.getBoundingClientRect();
+          let top = 60;
+          try {
+            const domPos = view.domAtPos(from);
+            if (domPos.node.nodeType === Node.TEXT_NODE) {
+              // 文字节点：取其父元素位置
+              const el = domPos.node.parentElement;
+              if (el) {
+                top = el.getBoundingClientRect().top - containerRect.top - 44;
+              }
+            } else if (domPos.node instanceof HTMLElement) {
+              top = domPos.node.getBoundingClientRect().top - containerRect.top - 44;
+            }
+            if (top < 8) top = 8;
+          } catch { /* fallback to default top */ }
+          setLinkInput({ visible: true, from, to, top, left: 0 });
+          return;
+        }
+
         const cmdMap: Record<string, string> = {
           bold: 'ToggleStrong',
           italic: 'ToggleEmphasis',
           strikethrough: 'ToggleStrikeThrough',
           inlineCode: 'ToggleInlineCode',
-          link: 'ToggleLink',
           image: 'InsertImage',
           table: 'InsertTable',
           horizontalRule: 'InsertHr',
@@ -274,6 +350,24 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
       isInternalRef.current = false;
     });
 
+    // 链接提交
+    const handleLinkSubmit = () => {
+      if (!linkInput || !editorRef.current) return;
+      const url = linkUrlRef.current.trim();
+      const editor = editorRef.current;
+      const view = editor.ctx.get(editorViewCtx);
+      if (!url) { setLinkInput(null); return; }
+      // 添加 http:// 前缀
+      const href = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+      const linkMark = view.state.schema.marks.link?.create({ href });
+      if (linkMark) {
+        const tr = view.state.tr.addMark(linkInput.from, linkInput.to, linkMark);
+        view.dispatch(tr);
+      }
+      setLinkInput(null);
+      linkUrlRef.current = '';
+    };
+
     return (
       <div className="flex-1 flex flex-col min-h-0">
         <div className="flex items-center px-4 py-2 bg-surface-100/50 dark:bg-surface-900/50
@@ -298,6 +392,50 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
               isInternalRef={isInternalRef}
             />
           </MilkdownProvider>
+
+          {/* 自定义链接输入浮层 */}
+          {linkInput?.visible && (
+            <>
+              {/* 遮罩层 — 点击关闭 */}
+              <div
+                className="absolute inset-0 z-[998]"
+                onClick={() => setLinkInput(null)}
+              />
+              {/* 输入框 — 顶部居中 */}
+              <div
+                className="link-input-popup absolute z-[999] left-1/2 -translate-x-1/2
+                           flex items-center gap-2
+                           bg-white dark:bg-surface-800
+                           border border-surface-200 dark:border-surface-600
+                           rounded-xl shadow-2xl px-4 py-3"
+                style={{ top: `${linkInput.top}px` }}
+              >
+                <input
+                  autoFocus
+                  className="bg-surface-100 dark:bg-surface-900
+                             border-2 border-surface-200 dark:border-surface-600
+                             rounded-lg px-3 py-2 text-sm
+                             text-surface-800 dark:text-surface-200
+                             outline-none w-72
+                             focus:border-accent-500 transition-colors"
+                  placeholder="输入或粘贴链接地址…"
+                  onChange={(e) => { linkUrlRef.current = e.target.value; }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleLinkSubmit();
+                    if (e.key === 'Escape') setLinkInput(null);
+                  }}
+                />
+                <button
+                  className="bg-accent-600 hover:bg-accent-700 text-white
+                             rounded-lg px-4 py-2 text-sm font-medium
+                             cursor-pointer transition-colors shrink-0"
+                  onClick={handleLinkSubmit}
+                >
+                  确定
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
