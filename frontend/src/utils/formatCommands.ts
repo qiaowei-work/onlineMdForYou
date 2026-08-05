@@ -24,7 +24,7 @@ function replaceSelection(
   });
 }
 
-/** 包裹选区：在选中文字前后加 wrap，光标落在合适位置 */
+/** 包裹选区：在选中文字前后加 before/after 标记。已包裹则取消标记（toggle）。 */
 function wrapSelection(
   view: EditorView,
   before: string,
@@ -33,8 +33,41 @@ function wrapSelection(
 ) {
   const { from, to } = view.state.selection.main;
   const selected = view.state.sliceDoc(from, to);
+  const docLength = view.state.doc.length;
+
   if (selected) {
-    // 有选区：包裹
+    // ---------- 有选区：先检查是否已包裹，再决定 toggle ----------
+
+    // 策略 1：检查选区外侧相邻字符是否正好是标记
+    const beforeFrom = Math.max(0, from - before.length);
+    const afterTo = Math.min(docLength, to + after.length);
+    const leftAdjacent = view.state.sliceDoc(beforeFrom, from);
+    const rightAdjacent = view.state.sliceDoc(to, afterTo);
+
+    if (leftAdjacent === before && rightAdjacent === after) {
+      // 外侧有标记 → unwrap：删除两侧标记
+      view.dispatch({
+        changes: [
+          { from: from - before.length, to: from },
+          { from: to, to: to + after.length },
+        ],
+        selection: EditorSelection.range(from - before.length, to - before.length),
+      });
+      return;
+    }
+
+    // 策略 2：检查选区文本本身是否以标记开头/结尾
+    if (selected.startsWith(before) && selected.endsWith(after) && selected.length >= before.length + after.length) {
+      // 选区包含标记 → unwrap：提取内部文字
+      const inner = selected.slice(before.length, selected.length - after.length);
+      view.dispatch({
+        changes: { from, to, insert: inner },
+        selection: EditorSelection.range(from, from + inner.length),
+      });
+      return;
+    }
+
+    // 未包裹 → 正常包裹
     view.dispatch({
       changes: [
         { from, insert: before },
