@@ -1,9 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Moon, Sun, Menu, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { Moon, Sun, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import EditorPanel from './components/EditorPanel';
-import type { EditorPanelHandle } from './components/EditorPanel';
-import PreviewPanel from './components/PreviewPanel';
+import MilkdownEditor from './components/MilkdownEditor';
+import type { MilkdownEditorHandle } from './components/MilkdownEditor';
 import Sidebar from './components/Sidebar';
 import Toolbar from './components/Toolbar';
 import type { FormatCommand } from './utils/formatCommands';
@@ -71,19 +70,13 @@ console.log(fibonacci(10)); // 55
 `;
 
 function App() {
-  const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
+  const [darkMode, setDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [previewOpen, setPreviewOpen] = useState(true);
   const [markdown, setMarkdown] = useState(DEFAULT_MARKDOWN);
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
 
-  const editorRef = useRef<EditorPanelHandle>(null);
+  const editorRef = useRef<MilkdownEditorHandle>(null);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
@@ -134,13 +127,6 @@ function App() {
           >
             {sidebarOpen ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
           </button>
-          <button
-            onClick={() => setPreviewOpen(!previewOpen)}
-            className="btn-ghost p-2"
-            title="切换预览"
-          >
-            {previewOpen ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
-          </button>
           <div className="w-px h-5 bg-surface-200 dark:bg-surface-700 mx-1" />
           <button
             onClick={() => setDarkMode(!darkMode)}
@@ -172,34 +158,19 @@ function App() {
           )}
         </AnimatePresence>
 
-        {/* Editor Panel */}
+        {/* Editor Panel — WYSIWYG */}
         <motion.div
           layout
           className="flex-1 flex flex-col min-w-0"
           transition={{ duration: 0.25, ease: 'easeInOut' }}
         >
-          <EditorPanel
+          <MilkdownEditor
             ref={editorRef}
             value={markdown}
             onChange={setMarkdown}
             darkMode={darkMode}
           />
         </motion.div>
-
-        {/* Preview Panel */}
-        <AnimatePresence>
-          {previewOpen && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: '50%', opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.25, ease: 'easeInOut' }}
-              className="overflow-hidden shrink-0 border-l border-surface-200 dark:border-surface-700"
-            >
-              <PreviewPanel markdown={markdown} />
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* Status Bar */}
@@ -214,7 +185,7 @@ function App() {
           <span className="w-px h-3 bg-surface-200 dark:bg-surface-700" />
           <span>UTF-8</span>
           <span className="w-px h-3 bg-surface-200 dark:bg-surface-700" />
-          <span>格式：光标位置插入 / 选中包裹</span>
+          <span>WYSIWYG — 所见即所得</span>
         </div>
         <div className="flex items-center gap-4">
           <span>{wordCount.toLocaleString()} 词</span>

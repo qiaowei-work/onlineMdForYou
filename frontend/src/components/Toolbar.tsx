@@ -58,13 +58,13 @@ function ToolButton({ icon: Icon, label, tip, onClick }: {
   return (
     <button
       onClick={onClick}
-      className="group relative p-1.5 rounded-md text-surface-500 dark:text-surface-400
+      className="group relative p-2.5 rounded-md text-surface-500 dark:text-surface-400
                  hover:text-surface-700 dark:hover:text-surface-200
                  hover:bg-surface-100 dark:hover:bg-surface-800
                  transition-all duration-150 shrink-0"
       title={fullTip}
     >
-      <Icon size={16} />
+      <Icon size={24} />
       {/* Tooltip */}
       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1
                     bg-surface-800 dark:bg-surface-200 text-white dark:text-surface-800
