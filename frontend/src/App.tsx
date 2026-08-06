@@ -146,7 +146,7 @@ function App() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="btn-ghost p-2"
+            className="btn-ghost p-2.5"
             title="切换侧边栏"
           >
             <Menu size={18} />
@@ -164,20 +164,20 @@ function App() {
         <div className="flex items-center gap-1">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="btn-ghost p-2"
+            className="btn-ghost p-2.5"
             title="切换侧边栏"
           >
-            {sidebarOpen ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            {sidebarOpen ? <PanelLeftOpen size={22} /> : <PanelLeftClose size={22} />}
           </button>
           <div className="w-px h-5 bg-surface-200 dark:bg-surface-700 mx-1" />
           {/* 导出 */}
           <div className="relative">
             <button
               onClick={() => setExportOpen(!exportOpen)}
-              className="btn-ghost p-2"
+              className="btn-ghost p-2.5"
               title="导出"
             >
-              <Download size={16} />
+              <Download size={22} />
             </button>
             {exportOpen && (
               <div
@@ -206,10 +206,10 @@ function App() {
           </div>
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className="btn-ghost p-2"
+            className="btn-ghost p-2.5"
             title={darkMode ? '切换到亮色模式' : '切换到深色模式'}
           >
-            {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+            {darkMode ? <Sun size={22} /> : <Moon size={22} />}
           </button>
         </div>
       </motion.header>

@@ -112,9 +112,9 @@ function PopupMenu({
                           ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
                           : 'text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700'
                        }`}
-            onClick={() => { item.onClick(); onClose(); }}
+            onClick={() => { item.onClick(); if (!item.keepOpen) onClose(); }}
           >
-            <item.icon size={15} />
+            <item.icon size={22} />
             {item.label}
           </button>
         </div>
@@ -128,13 +128,14 @@ function PopupMenu({
 // ============================================================
 
 function FolderNode({
-  folder, depth, articles, onSelect, activeId, onRefresh, onPrompt, onConfirmDlg,
+  folder, depth, articles, onSelect, activeId, onRefresh, onPrompt, onConfirmDlg, allFolders,
 }: {
   folder: FolderData; depth: number; articles: ArticleData[];
   onSelect: (id: number) => void; activeId: number | null;
   onRefresh: () => void;
   onPrompt: (title: string, defaultValue: string, cb: (v: string) => void) => void;
   onConfirmDlg: (title: string, desc: string, cb: () => void) => void;
+  allFolders: FolderData[];
 }) {
   const [expanded, setExpanded] = useState(true);
   const [hovered, setHovered] = useState(false);
@@ -200,10 +201,10 @@ function FolderNode({
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-1.5 py-1.5 min-w-0">
-          {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          {expanded ? <ChevronDown size={21} /> : <ChevronRight size={21} />}
           {expanded
-            ? <FolderOpen size={15} className="text-amber-500 shrink-0" />
-            : <Folder size={15} className="text-amber-500 shrink-0" />}
+            ? <FolderOpen size={22} className="text-amber-500 shrink-0" />
+            : <Folder size={22} className="text-amber-500 shrink-0" />}
           {renaming ? (
             <input
               autoFocus
@@ -234,7 +235,7 @@ function FolderNode({
               className="p-1 rounded-md hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors"
               onClick={() => setMenuType(menuType === 'add' ? null : 'add')}
             >
-              <Plus size={13} className="text-surface-400" />
+              <Plus size={22} className="text-surface-400" />
             </button>
             {/* 更多 */}
             <button
@@ -242,7 +243,7 @@ function FolderNode({
               className="p-1 rounded-md hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors"
               onClick={() => setMenuType(menuType === 'more' ? null : 'more')}
             >
-              <MoreHorizontal size={13} className="text-surface-400" />
+              <MoreHorizontal size={20} className="text-surface-400" />
             </button>
           </div>
         )}
@@ -279,12 +280,13 @@ function FolderNode({
           {folder.children.map((child) => (
             <FolderNode
               key={child.id} folder={child} depth={depth + 1}
-              articles={articles} onSelect={onSelect} activeId={activeId} onRefresh={onRefresh} onPrompt={onPrompt} onConfirmDlg={onConfirmDlg}
+              articles={articles} onSelect={onSelect} activeId={activeId} onRefresh={onRefresh} onPrompt={onPrompt} onConfirmDlg={onConfirmDlg} allFolders={allFolders}
             />
           ))}
           {folderArticles.map((a) => (
             <ArticleRow key={a.id} article={a} depth={depth + 1}
-              onSelect={onSelect} activeId={activeId} onRefresh={onRefresh} onConfirmDlg={onConfirmDlg} />
+              onSelect={onSelect} activeId={activeId} onRefresh={onRefresh} onConfirmDlg={onConfirmDlg}
+              folders={allFolders} />
           ))}
         </div>
       )}
@@ -297,17 +299,19 @@ function FolderNode({
 // ============================================================
 
 function ArticleRow({
-  article, depth, onSelect, activeId, onRefresh, onConfirmDlg,
+  article, depth, onSelect, activeId, onRefresh, onConfirmDlg, folders,
 }: {
   article: ArticleData; depth: number;
   onSelect: (id: number) => void; activeId: number | null;
   onRefresh: () => void;
   onConfirmDlg: (title: string, desc: string, cb: () => void) => void;
+  folders: FolderData[];
 }) {
   const [hovered, setHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [renameInput, setRenameInput] = useState('');
+  const [moveMode, setMoveMode] = useState(false);
   const moreRef = useRef<HTMLButtonElement>(null);
 
   const handleRename = async () => {
@@ -329,6 +333,33 @@ function ArticleRow({
     });
   };
 
+  const handleMove = async (folderId: number) => {
+    await fetch(`/api/articles/${article.id}/move?folderId=${folderId}`, { method: 'PUT' });
+    setMoveMode(false);
+    setMenuOpen(false);
+    onRefresh();
+  };
+
+  // 递归扁平化文件夹列表
+  const flattenFolders = (fds: FolderData[], prefix = ''): { id: number; label: string }[] => {
+    const result: { id: number; label: string }[] = [];
+    for (const f of fds) {
+      if (f.id !== article.folderId) {
+        result.push({ id: f.id, label: prefix + f.name });
+      }
+      if (f.children.length > 0) {
+        result.push(...flattenFolders(f.children, prefix + '  '));
+      }
+    }
+    return result;
+  };
+
+  const folderOptions = flattenFolders(folders);
+  // 根目录选项
+  if (article.folderId !== 0) {
+    folderOptions.unshift({ id: 0, label: '根目录' });
+  }
+
   return (
     <div
       className="flex items-center justify-between group pr-2"
@@ -341,7 +372,7 @@ function ArticleRow({
                        ${activeId === article.id
                           ? 'bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-400'
                           : 'text-surface-600 dark:text-surface-400'}`}>
-        <FileText size={15} className="text-blue-500 shrink-0" />
+        <FileText size={22} className="text-blue-500 shrink-0" />
         {renaming ? (
           <input
             autoFocus
@@ -366,20 +397,35 @@ function ArticleRow({
           ref={moreRef}
           className="p-1 rounded-md hover:bg-surface-200 dark:hover:bg-surface-700
                      transition-colors shrink-0"
-          onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+          onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); setMoveMode(false); }}
         >
-          <MoreHorizontal size={13} className="text-surface-400" />
+          <MoreHorizontal size={20} className="text-surface-400" />
         </button>
       )}
 
-      {menuOpen && (
+      {menuOpen && !moveMode && (
         <PopupMenu
           anchorRef={moreRef}
           onClose={() => setMenuOpen(false)}
           separatorAfter={1}
           items={[
             { label: '重命名', icon: Pencil, onClick: () => { setRenameInput(article.title); setRenaming(true); } },
+            { label: '移动到...', icon: FolderPlus, onClick: () => setMoveMode(true), keepOpen: true },
             { label: '删除', icon: Trash2, danger: true, onClick: handleDelete },
+          ]}
+        />
+      )}
+
+      {menuOpen && moveMode && (
+        <PopupMenu
+          anchorRef={moreRef}
+          onClose={() => { setMenuOpen(false); setMoveMode(false); }}
+          items={[
+            ...folderOptions.map((f) => ({
+              label: f.label,
+              icon: Folder as typeof FileText,
+              onClick: () => handleMove(f.id),
+            })),
           ]}
         />
       )}
@@ -392,14 +438,16 @@ function ArticleRow({
 // ============================================================
 
 function RootArticleRow({
-  article, onSelect, activeId, onRefresh, onConfirmDlg,
+  article, onSelect, activeId, onRefresh, onConfirmDlg, folders,
 }: {
   article: ArticleData;
   onSelect: (id: number) => void; activeId: number | null; onRefresh: () => void;
   onConfirmDlg: (title: string, desc: string, cb: () => void) => void;
+  folders: FolderData[];
 }) {
   return (
-    <ArticleRow article={article} depth={0} onSelect={onSelect} activeId={activeId} onRefresh={onRefresh} onConfirmDlg={onConfirmDlg} />
+    <ArticleRow article={article} depth={0} onSelect={onSelect} activeId={activeId}
+      onRefresh={onRefresh} onConfirmDlg={onConfirmDlg} folders={folders} />
   );
 }
 
@@ -463,7 +511,7 @@ export default function Sidebar({ onSelectArticle, activeArticleId, refreshKey }
             className="p-1 rounded-md hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
             onClick={() => setTopMenuOpen(!topMenuOpen)}
           >
-            <Plus size={14} className="text-surface-400" />
+            <Plus size={21} className="text-surface-400" />
           </button>
           {topMenuOpen && (
             <PopupMenu
@@ -490,13 +538,14 @@ export default function Sidebar({ onSelectArticle, activeArticleId, refreshKey }
                 articles={articles} onSelect={onSelectArticle}
                 activeId={activeArticleId} onRefresh={reload}
                 onPrompt={openPrompt} onConfirmDlg={openConfirm}
+                allFolders={folders}
               />
             ))}
             {rootArticles.map((a) => (
               <RootArticleRow
                 key={a.id} article={a}
                 onSelect={onSelectArticle} activeId={activeArticleId}
-                onRefresh={reload} onConfirmDlg={openConfirm}
+                onRefresh={reload} onConfirmDlg={openConfirm} folders={folders}
               />
             ))}
           </>
@@ -508,7 +557,7 @@ export default function Sidebar({ onSelectArticle, activeArticleId, refreshKey }
         <button className="flex items-center gap-2 w-full px-2 py-1.5 text-xs text-surface-400
                            hover:text-surface-600 dark:hover:text-surface-300 rounded-md
                            hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors">
-          <Trash2 size={12} />
+          <Trash2 size={18} />
           <span>回收站</span>
         </button>
       </div>
