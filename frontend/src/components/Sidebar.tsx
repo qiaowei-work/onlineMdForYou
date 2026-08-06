@@ -187,7 +187,7 @@ function FolderNode({
               autoFocus
               className="bg-surface-100 dark:bg-surface-700 rounded px-1.5 py-0.5 text-sm outline-none
                          border border-accent-500 w-full"
-              defaultValue={folder.name}
+              value={renameInput}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleRename();
                 if (e.key === 'Escape') setRenaming(false);
@@ -244,7 +244,7 @@ function FolderNode({
           pos={menuBtnPos('more')}
           onClose={() => setMenuType(null)}
           items={[
-            { label: '重命名', icon: Pencil, onClick: () => { setRenaming(true); } },
+            { label: '重命名', icon: Pencil, onClick: () => { setRenameInput(folder.name); setRenaming(true); } },
             { label: '删除', icon: Trash2, danger: true, onClick: handleDelete },
           ]}
         />
@@ -328,7 +328,7 @@ function ArticleRow({
             autoFocus
             className="bg-surface-100 dark:bg-surface-700 rounded px-1.5 py-0.5 text-sm outline-none
                        border border-accent-500 w-full text-surface-700 dark:text-surface-200"
-            defaultValue={article.title}
+            value={renameInput}
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleRename();
               if (e.key === 'Escape') setRenaming(false);
@@ -358,7 +358,7 @@ function ArticleRow({
           pos={menuPos()}
           onClose={() => setMenuOpen(false)}
           items={[
-            { label: '重命名', icon: Pencil, onClick: () => { setRenaming(true); } },
+            { label: '重命名', icon: Pencil, onClick: () => { setRenameInput(article.title); setRenaming(true); } },
             { label: '删除', icon: Trash2, danger: true, onClick: handleDelete },
           ]}
         />

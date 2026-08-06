@@ -104,6 +104,21 @@ function App() {
     setWordCount(text ? text.split(/\s+/).filter(Boolean).length : 0);
   }, [markdown]);
 
+  // 自动保存：停止输入 1.5s 后 PUT 到后端
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    if (currentArticleId == null) return;
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      fetch(`/api/articles/${currentArticleId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: markdown }),
+      }).catch(() => {});
+    }, 1500);
+    return () => clearTimeout(saveTimerRef.current);
+  }, [markdown, currentArticleId]);
+
   const handleFormat = useCallback((cmd: FormatCommand) => {
     editorRef.current?.executeCommand(cmd);
   }, []);

@@ -133,7 +133,6 @@ function MilkdownInner({
       isInternalRef.current = true;
       onChange(markdown);
     });
-
     // 通知外部编辑器就绪
     onReady(editor);
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -329,6 +328,7 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
           isInternalRef.current = false;
         }
       },
+
     }));
 
     // 仅在外部（非编辑器输入）value 变化时更新编辑器内容
