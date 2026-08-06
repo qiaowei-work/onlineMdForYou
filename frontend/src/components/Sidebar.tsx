@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import {
   FileText, Folder, FolderOpen, Plus, ChevronRight, ChevronDown,
   MoreHorizontal, Pencil, Trash2, FilePlus, FolderPlus,
 } from 'lucide-react';
+import { useModal } from './Modal';
 
 // ============================================================
 // 类型
@@ -60,13 +61,24 @@ function useData(refreshKey: number) {
 // ============================================================
 
 function PopupMenu({
-  items, onClose, pos,
+  items, onClose, anchorRef, separatorAfter = 0,
 }: {
   items: { label: string; icon: typeof FileText; danger?: boolean; onClick: () => void }[];
   onClose: () => void;
-  pos: { top: number; left: number };
+  anchorRef: React.RefObject<HTMLButtonElement | null>;
+  separatorAfter?: number; // 在此索引后加分隔线
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [ready, setReady] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  useLayoutEffect(() => {
+    if (anchorRef.current) {
+      const r = anchorRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, left: r.left });
+      setReady(true);
+    }
+  }, [anchorRef]);
 
   useEffect(() => {
     const close = (e: MouseEvent) => {
@@ -76,24 +88,36 @@ function PopupMenu({
     return () => document.removeEventListener('click', close);
   }, [onClose]);
 
+  if (!ready) return null;
+
   return (
     <div
       ref={ref}
-      className="absolute z-50 bg-white dark:bg-surface-800 border border-surface-200
-                 dark:border-surface-600 rounded-lg shadow-xl py-1 min-w-[140px]"
+      className="fixed z-50 rounded-xl py-1 min-w-[150px]
+                 bg-white/95 dark:bg-surface-800/95 backdrop-blur-md
+                 border border-surface-200/60 dark:border-surface-600/60
+                 shadow-lg shadow-black/5 dark:shadow-black/20
+                 animate-[popup_0.15s_ease-out]"
       style={{ top: pos.top, left: pos.left }}
     >
       {items.map((item, i) => (
-        <button
-          key={i}
-          className={`flex items-center gap-2 w-full px-3 py-2 text-sm text-left
-                     hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors
-                     ${item.danger ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20' : 'text-surface-700 dark:text-surface-300'}`}
-          onClick={() => { item.onClick(); onClose(); }}
-        >
-          <item.icon size={14} />
-          {item.label}
-        </button>
+        <div key={i}>
+          {i === separatorAfter && (
+            <div className="border-t border-surface-200 dark:border-surface-700 my-1" />
+          )}
+          <button
+            className={`flex items-center gap-2.5 w-full px-3.5 py-2 text-sm text-left
+                       transition-colors
+                       ${item.danger
+                          ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
+                          : 'text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700'
+                       }`}
+            onClick={() => { item.onClick(); onClose(); }}
+          >
+            <item.icon size={15} />
+            {item.label}
+          </button>
+        </div>
       ))}
     </div>
   );
@@ -104,18 +128,21 @@ function PopupMenu({
 // ============================================================
 
 function FolderNode({
-  folder, depth, articles, onSelect, activeId, onRefresh,
+  folder, depth, articles, onSelect, activeId, onRefresh, onPrompt, onConfirmDlg,
 }: {
   folder: FolderData; depth: number; articles: ArticleData[];
   onSelect: (id: number) => void; activeId: number | null;
   onRefresh: () => void;
+  onPrompt: (title: string, defaultValue: string, cb: (v: string) => void) => void;
+  onConfirmDlg: (title: string, desc: string, cb: () => void) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [hovered, setHovered] = useState(false);
   const [menuType, setMenuType] = useState<'add' | 'more' | null>(null);
   const [renameInput, setRenameInput] = useState('');
   const [renaming, setRenaming] = useState(false);
-  const menuBtnRef = useRef<{ [key: string]: HTMLButtonElement | null }>({});
+  const addBtnRef = useRef<HTMLButtonElement>(null);
+  const moreBtnRef = useRef<HTMLButtonElement>(null);
 
   const folderArticles = articles.filter((a) => a.folderId === folder.id);
 
@@ -130,21 +157,23 @@ function FolderNode({
     onRefresh();
   };
 
-  const handleDelete = async () => {
-    if (!confirm(`确定要删除文件夹"${folder.name}"及其所有内容吗？`)) return;
-    await fetch(`/api/folders/${folder.id}`, { method: 'DELETE' });
-    onRefresh();
+  const handleDelete = () => {
+    onConfirmDlg('删除文件夹', `确定要删除 "${folder.name}" 及其所有内容吗？`, async () => {
+      await fetch(`/api/folders/${folder.id}`, { method: 'DELETE' });
+      onRefresh();
+    });
   };
 
-  const handleNewFolder = async () => {
-    const name = prompt('请输入文件夹名称：');
-    if (!name?.trim()) return;
-    await fetch('/api/folders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name.trim(), parentId: folder.id }),
+  const handleNewFolder = () => {
+    onPrompt('新建文件夹', '', async (name) => {
+      if (!name.trim()) return;
+      await fetch('/api/folders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), parentId: folder.id }),
+      });
+      onRefresh();
     });
-    onRefresh();
   };
 
   const handleNewFile = async () => {
@@ -158,13 +187,6 @@ function FolderNode({
       onRefresh();
       onSelect(data.data.id);
     }
-  };
-
-  const menuBtnPos = (key: string) => {
-    const el = menuBtnRef.current[key];
-    if (!el) return { top: 0, left: 0 };
-    const rect = el.getBoundingClientRect();
-    return { top: rect.bottom - rect.top + 4, left: rect.width / 2 };
   };
 
   return (
@@ -208,7 +230,7 @@ function FolderNode({
           <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
             {/* 新建 */}
             <button
-              ref={(el) => { menuBtnRef.current.add = el; }}
+              ref={addBtnRef}
               className="p-1 rounded-md hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors"
               onClick={() => setMenuType(menuType === 'add' ? null : 'add')}
             >
@@ -216,7 +238,7 @@ function FolderNode({
             </button>
             {/* 更多 */}
             <button
-              ref={(el) => { menuBtnRef.current.more = el; }}
+              ref={moreBtnRef}
               className="p-1 rounded-md hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors"
               onClick={() => setMenuType(menuType === 'more' ? null : 'more')}
             >
@@ -229,7 +251,7 @@ function FolderNode({
       {/* 新建菜单 */}
       {menuType === 'add' && (
         <PopupMenu
-          pos={menuBtnPos('add')}
+          anchorRef={addBtnRef}
           onClose={() => setMenuType(null)}
           items={[
             { label: '新建文件夹', icon: FolderPlus, onClick: handleNewFolder },
@@ -241,8 +263,9 @@ function FolderNode({
       {/* 更多菜单 */}
       {menuType === 'more' && (
         <PopupMenu
-          pos={menuBtnPos('more')}
+          anchorRef={moreBtnRef}
           onClose={() => setMenuType(null)}
+          separatorAfter={1}
           items={[
             { label: '重命名', icon: Pencil, onClick: () => { setRenameInput(folder.name); setRenaming(true); } },
             { label: '删除', icon: Trash2, danger: true, onClick: handleDelete },
@@ -256,12 +279,12 @@ function FolderNode({
           {folder.children.map((child) => (
             <FolderNode
               key={child.id} folder={child} depth={depth + 1}
-              articles={articles} onSelect={onSelect} activeId={activeId} onRefresh={onRefresh}
+              articles={articles} onSelect={onSelect} activeId={activeId} onRefresh={onRefresh} onPrompt={onPrompt} onConfirmDlg={onConfirmDlg}
             />
           ))}
           {folderArticles.map((a) => (
             <ArticleRow key={a.id} article={a} depth={depth + 1}
-              onSelect={onSelect} activeId={activeId} onRefresh={onRefresh} />
+              onSelect={onSelect} activeId={activeId} onRefresh={onRefresh} onConfirmDlg={onConfirmDlg} />
           ))}
         </div>
       )}
@@ -274,11 +297,12 @@ function FolderNode({
 // ============================================================
 
 function ArticleRow({
-  article, depth, onSelect, activeId, onRefresh,
+  article, depth, onSelect, activeId, onRefresh, onConfirmDlg,
 }: {
   article: ArticleData; depth: number;
   onSelect: (id: number) => void; activeId: number | null;
   onRefresh: () => void;
+  onConfirmDlg: (title: string, desc: string, cb: () => void) => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -297,17 +321,12 @@ function ArticleRow({
     onRefresh();
   };
 
-  const handleDelete = async () => {
-    if (!confirm(`确定要删除"${article.title}"吗？`)) return;
-    await fetch(`/api/articles/${article.id}`, { method: 'DELETE' });
-    if (activeId === article.id) onSelect(0);
-    onRefresh();
-  };
-
-  const menuPos = () => {
-    if (!moreRef.current) return { top: 0, left: 0 };
-    const rect = moreRef.current.getBoundingClientRect();
-    return { top: rect.bottom - rect.top + 4, left: 0 };
+  const handleDelete = () => {
+    onConfirmDlg('删除文件', `确定要删除 "${article.title}" 吗？`, async () => {
+      await fetch(`/api/articles/${article.id}`, { method: 'DELETE' });
+      if (activeId === article.id) onSelect(0);
+      onRefresh();
+    });
   };
 
   return (
@@ -355,8 +374,9 @@ function ArticleRow({
 
       {menuOpen && (
         <PopupMenu
-          pos={menuPos()}
+          anchorRef={moreRef}
           onClose={() => setMenuOpen(false)}
+          separatorAfter={1}
           items={[
             { label: '重命名', icon: Pencil, onClick: () => { setRenameInput(article.title); setRenaming(true); } },
             { label: '删除', icon: Trash2, danger: true, onClick: handleDelete },
@@ -372,13 +392,14 @@ function ArticleRow({
 // ============================================================
 
 function RootArticleRow({
-  article, onSelect, activeId, onRefresh,
+  article, onSelect, activeId, onRefresh, onConfirmDlg,
 }: {
   article: ArticleData;
   onSelect: (id: number) => void; activeId: number | null; onRefresh: () => void;
+  onConfirmDlg: (title: string, desc: string, cb: () => void) => void;
 }) {
   return (
-    <ArticleRow article={article} depth={0} onSelect={onSelect} activeId={activeId} onRefresh={onRefresh} />
+    <ArticleRow article={article} depth={0} onSelect={onSelect} activeId={activeId} onRefresh={onRefresh} onConfirmDlg={onConfirmDlg} />
   );
 }
 
@@ -389,32 +410,44 @@ function RootArticleRow({
 export default function Sidebar({ onSelectArticle, activeArticleId, refreshKey }: SidebarProps) {
   const { folders, articles, loading, reload } = useData(refreshKey);
   const rootArticles = articles.filter((a) => a.folderId === 0 || a.folderId == null);
+  const modal = useModal();
 
   const [topMenuOpen, setTopMenuOpen] = useState(false);
   const topBtnRef = useRef<HTMLButtonElement>(null);
 
-  const handleNewFolder = async () => {
-    const name = prompt('请输入文件夹名称：');
-    if (!name?.trim()) return;
-    await fetch('/api/folders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name.trim(), parentId: 0 }),
-    });
-    reload();
+  const openPrompt = (title: string, defaultValue: string, onConfirm: (v: string) => void) => {
+    modal.open({ title, mode: 'prompt', defaultValue }, onConfirm);
+  };
+  const openConfirm = (title: string, description: string, onConfirm: () => void) => {
+    modal.open({ title, mode: 'confirm', description, confirmLabel: '删除', danger: true }, onConfirm);
   };
 
-  const handleNewFile = async () => {
-    const res = await fetch('/api/articles', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: '未命名文档', content: '' }),
-    });
-    if (res.ok) {
-      const data = await res.json();
+  const handleNewFolder = () => {
+    openPrompt('新建文件夹', '', async (name) => {
+      if (!name.trim()) return;
+      await fetch('/api/folders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), parentId: 0 }),
+      });
       reload();
-      onSelectArticle(data.data.id);
-    }
+    });
+  };
+
+  const handleNewFile = () => {
+    openPrompt('新建文件', '未命名文档', async (title) => {
+      if (!title.trim()) return;
+      const res = await fetch('/api/articles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title.trim(), content: '' }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        reload();
+        onSelectArticle(data.data.id);
+      }
+    });
   };
 
   return (
@@ -434,8 +467,7 @@ export default function Sidebar({ onSelectArticle, activeArticleId, refreshKey }
           </button>
           {topMenuOpen && (
             <PopupMenu
-              pos={{ top: 24, left: topBtnRef.current?.getBoundingClientRect().right
-                ? -120 : 0 }}
+              anchorRef={topBtnRef}
               onClose={() => setTopMenuOpen(false)}
               items={[
                 { label: '新建文件夹', icon: FolderPlus, onClick: handleNewFolder },
@@ -457,13 +489,14 @@ export default function Sidebar({ onSelectArticle, activeArticleId, refreshKey }
                 key={f.id} folder={f} depth={0}
                 articles={articles} onSelect={onSelectArticle}
                 activeId={activeArticleId} onRefresh={reload}
+                onPrompt={openPrompt} onConfirmDlg={openConfirm}
               />
             ))}
             {rootArticles.map((a) => (
               <RootArticleRow
                 key={a.id} article={a}
                 onSelect={onSelectArticle} activeId={activeArticleId}
-                onRefresh={reload}
+                onRefresh={reload} onConfirmDlg={openConfirm}
               />
             ))}
           </>

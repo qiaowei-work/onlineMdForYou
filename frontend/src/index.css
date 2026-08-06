@@ -242,16 +242,18 @@
   margin-bottom: 0.75rem !important;
 }
 
-/* --- 引用块：统一上下内边距实现垂直居中 --- */
+/* --- 引用块：垂直居中 --- */
 .milkdown-theme-nord blockquote {
   margin-top: 1rem !important;
   margin-bottom: 1rem !important;
   padding: 0.75rem 1.25rem !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   @apply border-l-4 border-accent-500 bg-surface-50 dark:bg-surface-900/50;
 }
-.milkdown-theme-nord blockquote p:last-child {
-  margin-bottom: 0 !important;
-}
+.milkdown-theme-nord blockquote > *:first-child { margin-top: 0 !important; }
+.milkdown-theme-nord blockquote > *:last-child  { margin-bottom: 0 !important; }
 
 /* --- 代码块 --- */
 .milkdown-theme-nord pre {
@@ -560,6 +562,11 @@
   border: none;
   background: transparent;
 }
+@keyframes popup {
+  from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
 .table-toolbar-btn.del {
   @apply text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20;
 }

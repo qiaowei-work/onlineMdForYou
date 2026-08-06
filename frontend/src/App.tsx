@@ -1,10 +1,12 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Moon, Sun, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Moon, Sun, Menu, PanelLeftClose, PanelLeftOpen, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MilkdownEditor from './components/MilkdownEditor';
 import type { MilkdownEditorHandle } from './components/MilkdownEditor';
 import Sidebar from './components/Sidebar';
 import Toolbar from './components/Toolbar';
+import { ModalProvider } from './components/Modal';
+import { exportHTML, exportPDF } from './utils/export';
 import type { FormatCommand } from './utils/formatCommands';
 
 const DEFAULT_MARKDOWN = `# 👋 欢迎使用 MdOnline
@@ -77,6 +79,14 @@ function App() {
   const [charCount, setCharCount] = useState(0);
   const [currentArticleId, setCurrentArticleId] = useState<number | null>(null);
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
+  const [exportOpen, setExportOpen] = useState(false);
+
+  useEffect(() => {
+    if (!exportOpen) return;
+    const close = (e: MouseEvent) => { if (!(e.target as HTMLElement).closest('.export-menu')) setExportOpen(false); };
+    setTimeout(() => document.addEventListener('click', close), 0);
+    return () => document.removeEventListener('click', close);
+  }, [exportOpen]);
 
   const editorRef = useRef<MilkdownEditorHandle>(null);
 
@@ -124,6 +134,7 @@ function App() {
   }, []);
 
   return (
+    <ModalProvider>
     <div className="h-screen flex flex-col overflow-hidden">
       {/* Top Navigation Bar */}
       <motion.header
@@ -159,6 +170,40 @@ function App() {
             {sidebarOpen ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
           </button>
           <div className="w-px h-5 bg-surface-200 dark:bg-surface-700 mx-1" />
+          {/* 导出 */}
+          <div className="relative">
+            <button
+              onClick={() => setExportOpen(!exportOpen)}
+              className="btn-ghost p-2"
+              title="导出"
+            >
+              <Download size={16} />
+            </button>
+            {exportOpen && (
+              <div
+                className="export-menu absolute right-0 top-full mt-1 z-50 bg-white dark:bg-surface-800
+                           border border-surface-200 dark:border-surface-600 rounded-lg shadow-xl py-1 min-w-[120px]"
+                onClick={() => setExportOpen(false)}
+              >
+                <button
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left
+                             text-surface-700 dark:text-surface-300
+                             hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+                  onClick={() => { const t = document.querySelector('.milkdown-theme-nord h1')?.textContent ?? '文档'; exportHTML(markdown, t); }}
+                >
+                  导出 HTML
+                </button>
+                <button
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left
+                             text-surface-700 dark:text-surface-300
+                             hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+                  onClick={() => { const t = document.querySelector('.milkdown-theme-nord h1')?.textContent ?? '文档'; exportPDF(markdown, t); }}
+                >
+                  导出 PDF
+                </button>
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setDarkMode(!darkMode)}
             className="btn-ghost p-2"
@@ -229,6 +274,7 @@ function App() {
         </div>
       </motion.footer>
     </div>
+    </ModalProvider>
   );
 }
 
