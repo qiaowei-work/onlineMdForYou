@@ -25,6 +25,9 @@ public class Article {
     @Schema(description = "摘要")
     private String summary;
 
+    @Schema(description = "所属文件夹 ID，0=根目录")
+    private Long folderId;
+
     @Schema(description = "字数")
     private Integer wordCount;
 
@@ -50,6 +53,8 @@ public class Article {
     public void setContent(String content) { this.content = content; }
     public String getSummary() { return summary; }
     public void setSummary(String summary) { this.summary = summary; }
+    public Long getFolderId() { return folderId; }
+    public void setFolderId(Long folderId) { this.folderId = folderId; }
     public Integer getWordCount() { return wordCount; }
     public void setWordCount(Integer wordCount) { this.wordCount = wordCount; }
     public LocalDateTime getCreatedAt() { return createdAt; }

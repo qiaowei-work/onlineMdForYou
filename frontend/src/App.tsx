@@ -75,8 +75,24 @@ function App() {
   const [markdown, setMarkdown] = useState(DEFAULT_MARKDOWN);
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
+  const [currentArticleId, setCurrentArticleId] = useState<number | null>(null);
+  const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
 
   const editorRef = useRef<MilkdownEditorHandle>(null);
+
+  // 侧边栏点击文章 → 加载内容
+  const handleSelectArticle = useCallback(async (id: number) => {
+    setCurrentArticleId(id);
+    try {
+      const res = await fetch(`/api/articles/${id}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const content = data.data?.content ?? '';
+      setMarkdown(content);
+      // 延迟等编辑器就绪后写入
+      setTimeout(() => editorRef.current?.setMarkdown(content), 100);
+    } catch { /* ignore */ }
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
@@ -153,7 +169,11 @@ function App() {
               transition={{ duration: 0.25, ease: 'easeInOut' }}
               className="overflow-hidden shrink-0 border-r border-surface-200 dark:border-surface-700 bg-surface-50/50 dark:bg-surface-950/50"
             >
-              <Sidebar />
+              <Sidebar
+                onSelectArticle={handleSelectArticle}
+                activeArticleId={currentArticleId}
+                refreshKey={sidebarRefreshKey}
+              />
             </motion.aside>
           )}
         </AnimatePresence>

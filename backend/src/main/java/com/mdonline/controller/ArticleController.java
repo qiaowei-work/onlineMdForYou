@@ -24,10 +24,20 @@ public class ArticleController {
         this.articleService = articleService;
     }
 
-    @Operation(summary = "获取文章列表")
+    @Operation(summary = "获取文章列表（可按文件夹筛选）")
     @GetMapping
-    public Result<List<Article>> list() {
-        return Result.ok(articleService.list());
+    public Result<List<Article>> list(
+            @Parameter(description = "文件夹 ID，0=根目录")
+            @RequestParam(required = false) Long folderId) {
+        if (folderId != null) {
+            return Result.ok(articleService.list(
+                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Article>()
+                            .eq(Article::getFolderId, folderId)
+                            .orderByDesc(Article::getUpdatedAt)));
+        }
+        return Result.ok(articleService.list(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Article>()
+                        .orderByDesc(Article::getUpdatedAt)));
     }
 
     @Operation(summary = "获取文章详情")
@@ -47,7 +57,7 @@ public class ArticleController {
     public Result<Article> create(@RequestBody Article article) {
         // 自动计算字数
         if (article.getContent() != null) {
-            article.setWordCount(article.getContent().length());
+            article.setWordCount(Integer.valueOf(article.getContent().length()));
         }
         articleService.save(article);
         return Result.ok(article);
@@ -64,7 +74,7 @@ public class ArticleController {
         }
         article.setId(id);
         if (article.getContent() != null) {
-            article.setWordCount(article.getContent().length());
+            article.setWordCount(Integer.valueOf(article.getContent().length()));
         }
         articleService.updateById(article);
         return Result.ok(articleService.getById(id));
@@ -76,5 +86,19 @@ public class ArticleController {
             @Parameter(description = "文章 ID") @PathVariable Long id) {
         boolean removed = articleService.removeById(id);
         return removed ? Result.ok() : Result.fail(404, "文章不存在");
+    }
+
+    @Operation(summary = "移动文章到指定文件夹")
+    @PutMapping("/{id}/move")
+    public Result<Void> move(
+            @Parameter(description = "文章 ID") @PathVariable Long id,
+            @Parameter(description = "目标文件夹 ID") @RequestParam Long folderId) {
+        Article article = articleService.getById(id);
+        if (article == null) {
+            return Result.fail(404, "文章不存在");
+        }
+        article.setFolderId(folderId);
+        articleService.updateById(article);
+        return Result.ok();
     }
 }

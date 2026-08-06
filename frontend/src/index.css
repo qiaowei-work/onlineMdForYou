@@ -292,9 +292,7 @@
          transition-colors;
 }
 .milkdown-code-block .expand-icon {
-  @apply text-surface-400;
-  display: inline-flex;
-  align-items: center;
+  display: none;
 }
 
 /* 右侧按钮组 */
@@ -566,11 +564,27 @@
   @apply text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20;
 }
 
-/* 编辑器内容区水平留白（类似 Word 页边距） */
+/* 编辑器容器背景 — 浅灰底，衬托卡片 */
+.milkdown-container {
+  background: #f1f5f9;
+}
+.dark .milkdown-container {
+  background: #020617;
+}
+
+/* 编辑器内容区 — 卡片效果（类似 Notion 纸张） */
 .milkdown-container .ProseMirror {
-  padding-left: 32rem !important;
-  padding-right: 32rem !important;
-  padding-top: 5rem !important;
-  padding-bottom: 16rem !important;
-  min-height: 100%;
+  margin: 2rem auto;
+  padding: 4rem 5rem;
+  max-width: 64rem;
+  min-height: calc(100vh - 4rem);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+}
+.dark .milkdown-container .ProseMirror {
+  background: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.2);
 }
