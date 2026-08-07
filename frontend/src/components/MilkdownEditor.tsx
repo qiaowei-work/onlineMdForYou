@@ -197,9 +197,38 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
       };
       container.addEventListener('click', handleClick, true);
 
+      // 剪贴板粘贴图片
+      const handlePaste = async (e: ClipboardEvent) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (const item of Array.from(items)) {
+          if (item.type.startsWith('image/')) {
+            e.preventDefault();
+            const file = item.getAsFile();
+            if (!file) continue;
+            try {
+              const form = new FormData();
+              form.append('file', file);
+              const res = await fetch('/api/upload', { method: 'POST', body: form });
+              const data = await res.json();
+              const view = editorRef.current?.ctx.get(editorViewCtx);
+              if (view) {
+                const tr = view.state.tr.insertText(`![](${data.url})`, view.state.selection.from);
+                view.dispatch(tr);
+              }
+            } catch (err) {
+              console.error('图片粘贴上传失败', err);
+            }
+            break;
+          }
+        }
+      };
+      container.addEventListener('paste', handlePaste);
+
       return () => {
         cleanup.destroy();
         container.removeEventListener('click', handleClick, true);
+        container.removeEventListener('paste', handlePaste);
       };
     }, [editorReady, editorKey]);
 
@@ -342,12 +371,36 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
           return;
         }
 
+        // --- 图片上传 ---
+        if (cmd === 'image') {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = 'image/*';
+          input.onchange = async () => {
+            const file = input.files?.[0];
+            if (!file) return;
+            try {
+              const form = new FormData();
+              form.append('file', file);
+              const res = await fetch('/api/upload', { method: 'POST', body: form });
+              const data = await res.json();
+              const url = data.url;
+              const view2 = editor.ctx.get(editorViewCtx);
+              const tr = view2.state.tr.insertText(`![](${url})`, view2.state.selection.from);
+              view2.dispatch(tr);
+            } catch (err) {
+              console.error('图片上传失败', err);
+            }
+          };
+          input.click();
+          return;
+        }
+
         const cmdMap: Record<string, string> = {
           bold: 'ToggleStrong',
           italic: 'ToggleEmphasis',
           strikethrough: 'ToggleStrikeThrough',
           inlineCode: 'ToggleInlineCode',
-          image: 'InsertImage',
           table: 'InsertTable',
           horizontalRule: 'InsertHr',
         };

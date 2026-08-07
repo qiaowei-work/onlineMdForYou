@@ -13,6 +13,17 @@ spring:
     username: sa
     password:
 
+  # 文件上传限制
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  # 静态资源（上传图片）
+  web:
+    resources:
+      static-locations: classpath:/static,file:./uploads
+
   # H2 Web Console（开发调试用，访问 http://localhost:8080/h2-console）
   h2:
     console:
