@@ -3,7 +3,8 @@
  */
 export type FormatCommand =
   | 'bold' | 'italic' | 'strikethrough' | 'inlineCode'
+  | 'paragraph'
   | 'heading1' | 'heading2' | 'heading3'
-  | 'bulletList' | 'orderedList' | 'taskList'
+  | 'bulletList' | 'orderedList'
   | 'blockquote' | 'codeBlock'
   | 'link' | 'image' | 'table' | 'horizontalRule';

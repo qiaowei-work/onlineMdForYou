@@ -252,8 +252,13 @@
   justify-content: center;
   @apply border-l-4 border-accent-500 bg-surface-50 dark:bg-surface-900/50;
 }
+/* 引用块内标题降级 — 引用是次要内容，标题不应与正文同级 */
+.milkdown-theme-nord blockquote h1 { font-size: 1.125rem !important; font-weight: 600 !important; }
+.milkdown-theme-nord blockquote h2 { font-size: 1rem !important; font-weight: 600 !important; }
+.milkdown-theme-nord blockquote h3 { font-size: 0.9375rem !important; font-weight: 600 !important; }
 .milkdown-theme-nord blockquote > *:first-child { margin-top: 0 !important; }
 .milkdown-theme-nord blockquote > *:last-child  { margin-bottom: 0 !important; }
+
 
 /* --- 代码块 --- */
 .milkdown-theme-nord pre {

@@ -13,6 +13,7 @@ import { nord } from '@milkdown/theme-nord';
 
 // 代码块语法高亮
 import { codeBlockComponent, codeBlockConfig } from '@milkdown/kit/component/code-block';
+import { linkTooltipPlugin } from '@milkdown/components/link-tooltip';
 import { LanguageDescription } from '@codemirror/language';
 import { sql } from '@codemirror/lang-sql';
 import { javascript } from '@codemirror/lang-javascript';
@@ -119,7 +120,8 @@ function MilkdownInner({
       .use(indent)
       .use(trailing)
       .use(listener)
-      .use(codeBlockComponent);
+      .use(codeBlockComponent)
+      .use(linkTooltipPlugin);
   });
 
   // 编辑器初始化完成后注册回调和通知外部
@@ -157,7 +159,7 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
     } | null>(null);
     const linkUrlRef = useRef('');
 
-    // 安装表格行列控件
+    // 安装表格行列控件 + 链接点击
     useEffect(() => {
       if (!editorReady) return;
       const container = containerRef.current;
@@ -169,7 +171,24 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
         (name: string) => editorRef.current?.ctx.get(commandsCtx).call(name) ?? false,
       );
 
-      return () => cleanup.destroy();
+      // 链接点击 → 在新标签页打开
+      const handleClick = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        // 链接：Ctrl/Cmd+点击走默认（编辑），普通点击打开链接
+        const link = target.closest('a');
+        if (link && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          const href = link.getAttribute('href');
+          if (href) window.open(href, '_blank');
+          return;
+        }
+      };
+      container.addEventListener('click', handleClick, true);
+
+      return () => {
+        cleanup.destroy();
+        container.removeEventListener('click', handleClick, true);
+      };
     }, [editorReady, editorKey]);
 
     useImperativeHandle(ref, () => ({
@@ -182,9 +201,21 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
           editor.ctx.get(editorViewCtx).focus();
         } catch { /* ignore */ }
 
-        // 任务列表无内置命令，手动插入 markdown
-        if (cmd === 'taskList') {
-          editor.action(insert('\n- [ ] '));
+        // 正文 — 将当前块转为普通段落
+        if (cmd === 'paragraph') {
+          try {
+            editor.ctx.get(commandsCtx).call('TurnIntoText');
+          } catch {
+            // fallback：用 setBlockType 强制置为 paragraph
+            try {
+              const view = editor.ctx.get(editorViewCtx);
+              const { $from } = view.state.selection;
+              const paraType = view.state.schema.nodes.paragraph;
+              if (paraType) {
+                view.dispatch(view.state.tr.setBlockType($from.pos, $from.pos, paraType));
+              }
+            } catch { /* ignore */ }
+          }
           return;
         }
 
@@ -260,19 +291,13 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
           if (from === to) return;
           const container = containerRef.current;
           if (!container) return;
-          // 用 ProseMirror domAtPos 获取文字 DOM 位置（不依赖焦点）
           const containerRect = container.getBoundingClientRect();
           let top = 60;
           try {
-            const domPos = view.domAtPos(from);
-            if (domPos.node.nodeType === Node.TEXT_NODE) {
-              // 文字节点：取其父元素位置
-              const el = domPos.node.parentElement;
-              if (el) {
-                top = el.getBoundingClientRect().top - containerRect.top - 44;
-              }
-            } else if (domPos.node instanceof HTMLElement) {
-              top = domPos.node.getBoundingClientRect().top - containerRect.top - 44;
+            const coords = view.coordsAtPos(from);
+            if (coords) {
+              // coordsAtPos 返回视口坐标，需转换为容器内容坐标（加 scrollTop）
+              top = coords.top - containerRect.top + container.scrollTop - 44;
             }
             if (top < 8) top = 8;
           } catch { /* fallback to default top */ }
@@ -422,7 +447,7 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
                   onChange={(e) => { linkUrlRef.current = e.target.value; }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleLinkSubmit();
-                    if (e.key === 'Escape') setLinkInput(null);
+                    if (e.key === 'Escape') { setLinkInput(null); linkUrlRef.current = ''; }
                   }}
                 />
                 <button

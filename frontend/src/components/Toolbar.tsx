@@ -2,6 +2,7 @@ import {
   Bold,
   Italic,
   Strikethrough,
+  Type,
   Heading1,
   Heading2,
   Heading3,
@@ -14,7 +15,6 @@ import {
   Image,
   Table,
   Minus,
-  CheckSquare,
 } from 'lucide-react';
 import type { FormatCommand } from '../utils/formatCommands';
 
@@ -32,6 +32,7 @@ const tools: { icon: typeof Bold; label: string; cmd: FormatCommand; tip: string
 ];
 
 const headings: { icon: typeof Heading1; label: string; cmd: FormatCommand; tip: string }[] = [
+  { icon: Type, label: '正文', cmd: 'paragraph', tip: '' },
   { icon: Heading1, label: '一级标题', cmd: 'heading1', tip: '' },
   { icon: Heading2, label: '二级标题', cmd: 'heading2', tip: '' },
   { icon: Heading3, label: '三级标题', cmd: 'heading3', tip: '' },
@@ -40,7 +41,6 @@ const headings: { icon: typeof Heading1; label: string; cmd: FormatCommand; tip:
 const blocks: { icon: typeof List; label: string; cmd: FormatCommand; tip: string }[] = [
   { icon: List, label: '无序列表', cmd: 'bulletList', tip: 'Ctrl+Shift+U' },
   { icon: ListOrdered, label: '有序列表', cmd: 'orderedList', tip: 'Ctrl+Shift+O' },
-  { icon: CheckSquare, label: '任务列表', cmd: 'taskList', tip: '' },
   { icon: Quote, label: '引用', cmd: 'blockquote', tip: '' },
   { icon: Code2, label: '代码块', cmd: 'codeBlock', tip: 'Ctrl+Shift+K' },
   { icon: Table, label: '表格', cmd: 'table', tip: '' },

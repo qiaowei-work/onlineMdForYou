@@ -71,7 +71,7 @@ export function exportPDF(markdown: string, title = '未命名文档') {
   const doc = buildDocument(title, body);
   const w = window.open('', '_blank');
   if (!w) return;
+  w.onload = () => { w.print(); };
   w.document.write(doc);
   w.document.close();
-  w.onload = () => { w.print(); };
 }

@@ -57,8 +57,12 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     if (!config) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close();
-      if (e.key === 'Enter' && config.mode === 'prompt') {
-        cbRef.current?.(value);
+      if (e.key === 'Enter') {
+        if (config.mode === 'prompt') {
+          cbRef.current?.(value);
+        } else {
+          cbRef.current?.(true as unknown as string);
+        }
         close();
       }
     };
@@ -80,7 +84,7 @@ export function ModalProvider({ children }: { children: ReactNode }) {
       {children}
       {config && (
         <div
-          className="fixed inset-0 z-[999] flex items-center justify-center
+          className="fixed inset-0 z-[1000] flex items-center justify-center
                      bg-black/20 backdrop-blur-sm"
           onClick={close}
         >

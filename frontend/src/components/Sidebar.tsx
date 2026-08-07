@@ -217,7 +217,7 @@ function FolderNode({
               }}
               onChange={(e) => setRenameInput(e.target.value)}
               onClick={(e) => e.stopPropagation()}
-              onBlur={() => setRenaming(false)}
+      onBlur={() => handleRename()}
             />
           ) : (
             <span className="text-sm text-surface-700 dark:text-surface-300 truncate select-none">
@@ -328,7 +328,7 @@ function ArticleRow({
   const handleDelete = () => {
     onConfirmDlg('删除文件', `确定要删除 "${article.title}" 吗？`, async () => {
       await fetch(`/api/articles/${article.id}`, { method: 'DELETE' });
-      if (activeId === article.id) onSelect(0);
+      if (activeId === article.id) onSelect(-1);
       onRefresh();
     });
   };
@@ -502,7 +502,7 @@ export default function Sidebar({ onSelectArticle, activeArticleId, refreshKey }
     <div className="h-full flex flex-col relative">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-3 border-b border-surface-200 dark:border-surface-700">
-        <span className="text-lg font-semibold text-surface-400 uppercase tracking-wider">
+        <span className="text-[14px] font-semibold text-surface-400 uppercase tracking-wider">
           文件管理
         </span>
         <div className="relative">
@@ -554,7 +554,7 @@ export default function Sidebar({ onSelectArticle, activeArticleId, refreshKey }
 
       {/* Footer */}
       <div className="border-t border-surface-200 dark:border-surface-700 px-3 py-2">
-        <button className="flex items-center gap-2 w-full px-2 py-1.5 text-xs text-surface-400
+        <button className="flex items-center gap-2 w-full px-2 py-1.5 text-[14px] text-surface-400
                            hover:text-surface-600 dark:hover:text-surface-300 rounded-md
                            hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors">
           <Trash2 size={18} />

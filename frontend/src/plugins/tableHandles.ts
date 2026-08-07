@@ -77,6 +77,16 @@ export function setupTableHandles(
   let currentTable: HTMLElement | null = null;
   let hideTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // 稳定的 handler 引用（只创建一次，避免重复 addEventListener 导致内存泄漏）
+  const toolbarMouseEnter = () => {
+    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+  };
+  const toolbarMouseLeave = () => { hide(); };
+
+  // 初始化时绑定一次
+  toolbar.addEventListener('mouseenter', toolbarMouseEnter);
+  toolbar.addEventListener('mouseleave', toolbarMouseLeave);
+
   function show(table: HTMLElement) {
     if (currentTable === table) return;
     currentTable = table;
@@ -91,28 +101,29 @@ export function setupTableHandles(
     }, 300);
   }
 
-  container.addEventListener('mousemove', (e) => {
+  function onMouseMove(e: MouseEvent) {
     const target = e.target as HTMLElement;
-    // 只在编辑器内的表格上响应
     const table = target.closest('.ProseMirror table');
     if (table instanceof HTMLElement) {
       show(table);
-      // 鼠标移到工具栏上也保持显示
-      toolbar.addEventListener('mouseenter', () => {
-        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
-      });
-      toolbar.addEventListener('mouseleave', hide);
     } else if (currentTable && !(e.target as HTMLElement).closest('.table-toolbar')) {
       hide();
     }
-  });
+  }
 
-  container.addEventListener('scroll', () => {
+  function onScroll() {
     if (currentTable) positionToolbar(toolbar, currentTable, container);
-  });
+  }
+
+  container.addEventListener('mousemove', onMouseMove);
+  container.addEventListener('scroll', onScroll);
 
   return {
     destroy() {
+      container.removeEventListener('mousemove', onMouseMove);
+      container.removeEventListener('scroll', onScroll);
+      toolbar.removeEventListener('mouseenter', toolbarMouseEnter);
+      toolbar.removeEventListener('mouseleave', toolbarMouseLeave);
       toolbar.remove();
     },
   };

@@ -92,6 +92,13 @@ function App() {
 
   // 侧边栏点击文章 → 加载内容
   const handleSelectArticle = useCallback(async (id: number) => {
+    // 无效 id（如删除当前文章后），清空编辑器
+    if (id <= 0) {
+      setCurrentArticleId(null);
+      setMarkdown('');
+      setTimeout(() => editorRef.current?.setMarkdown(''), 100);
+      return;
+    }
     setCurrentArticleId(id);
     try {
       const res = await fetch(`/api/articles/${id}`);
@@ -116,15 +123,25 @@ function App() {
 
   // 自动保存：停止输入 1.5s 后 PUT 到后端
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const abortRef = useRef<AbortController | null>(null);
   useEffect(() => {
     if (currentArticleId == null) return;
     clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
+      // 取消上一次未完成的请求，避免旧数据覆盖新数据
+      if (abortRef.current) abortRef.current.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
       fetch(`/api/articles/${currentArticleId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: markdown }),
-      }).catch(() => {});
+        signal: controller.signal,
+      }).catch((err) => {
+        if (err.name !== 'AbortError') {
+          console.error('自动保存失败:', err);
+        }
+      });
     }, 1500);
     return () => clearTimeout(saveTimerRef.current);
   }, [markdown, currentArticleId]);
