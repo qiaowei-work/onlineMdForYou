@@ -15,6 +15,7 @@ import {
   Image,
   Table,
   Minus,
+  Sigma,
 } from 'lucide-react';
 import type { FormatCommand } from '../utils/formatCommands';
 
@@ -43,6 +44,7 @@ const blocks: { icon: typeof List; label: string; cmd: FormatCommand; tip: strin
   { icon: ListOrdered, label: '有序列表', cmd: 'orderedList', tip: 'Ctrl+Shift+O' },
   { icon: Quote, label: '引用', cmd: 'blockquote', tip: '' },
   { icon: Code2, label: '代码块', cmd: 'codeBlock', tip: 'Ctrl+Shift+K' },
+  { icon: Sigma, label: '公式块', cmd: 'math', tip: '' },
   { icon: Table, label: '表格', cmd: 'table', tip: '' },
   { icon: Minus, label: '分割线', cmd: 'horizontalRule', tip: '' },
 ];

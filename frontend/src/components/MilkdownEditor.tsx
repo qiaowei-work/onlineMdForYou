@@ -1,6 +1,7 @@
 import { forwardRef, useImperativeHandle, useRef, useEffect, useState } from 'react';
 import { Editor, rootCtx, defaultValueCtx, editorViewCtx, commandsCtx } from '@milkdown/kit/core';
 import { getMarkdown, replaceAll, insert } from '@milkdown/kit/utils';
+import { $view } from '@milkdown/utils';
 import { commonmark } from '@milkdown/kit/preset/commonmark';
 import { gfm } from '@milkdown/kit/preset/gfm';
 import { history } from '@milkdown/kit/plugin/history';
@@ -14,6 +15,10 @@ import { nord } from '@milkdown/theme-nord';
 // 代码块语法高亮
 import { codeBlockComponent, codeBlockConfig } from '@milkdown/kit/component/code-block';
 import { linkTooltipPlugin } from '@milkdown/components/link-tooltip';
+// LaTeX 数学公式
+import { math, mathBlockSchema } from '@milkdown/plugin-math';
+import { MathBlockNodeView } from './MathBlockView';
+import 'katex/dist/katex.min.css';
 import { LanguageDescription } from '@codemirror/language';
 import { sql } from '@codemirror/lang-sql';
 import { javascript } from '@codemirror/lang-javascript';
@@ -27,7 +32,7 @@ import { php } from '@codemirror/lang-php';
 import { rust } from '@codemirror/lang-rust';
 import { go } from '@codemirror/lang-go';
 import { cpp } from '@codemirror/lang-cpp';
-import { basicSetup } from 'codemirror';
+import { minimalSetup } from 'codemirror';
 
 import { setupTableHandles } from '../plugins/tableHandles';
 import type { FormatCommand } from '../utils/formatCommands';
@@ -47,6 +52,11 @@ function liftBlock(view: EditorView): boolean {
   dispatch(tr);
   return true;
 }
+
+// Typora 风格公式块 — 自定义 NodeView（纯 DOM）
+const mathBlockView = $view(mathBlockSchema.node, (_ctx) => {
+  return (node: any, view: any, getPos: any) => new MathBlockNodeView(node, view, getPos);
+});
 
 // 代码块支持的语言列表（编辑模式 CodeMirror 高亮）
 const CODE_LANGUAGES = [
@@ -107,7 +117,7 @@ function MilkdownInner({
       .config((ctx) => {
         ctx.update(codeBlockConfig.key, (prev) => ({
           ...prev,
-          extensions: [...prev.extensions, basicSetup],
+          extensions: [...prev.extensions, minimalSetup],
           languages: CODE_LANGUAGES,
           previewOnlyByDefault: false,
         }));
@@ -121,7 +131,9 @@ function MilkdownInner({
       .use(trailing)
       .use(listener)
       .use(codeBlockComponent)
-      .use(linkTooltipPlugin);
+      .use(linkTooltipPlugin)
+      .use(mathBlockView)
+      .use(math);
   });
 
   // 编辑器初始化完成后注册回调和通知外部
@@ -234,6 +246,17 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
             }
           } catch {
             editor.ctx.get(commandsCtx).call('WrapInBlockquote');
+          }
+          return;
+        }
+
+        // --- 公式块：插入 $$ 块 ---
+        if (cmd === 'math') {
+          const { state, dispatch } = view;
+          const mathBlockType = state.schema.nodes.math_block;
+          if (mathBlockType) {
+            const node = mathBlockType.create({ value: '' });
+            dispatch(state.tr.replaceSelectionWith(node));
           }
           return;
         }

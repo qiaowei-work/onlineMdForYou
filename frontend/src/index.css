@@ -260,6 +260,35 @@
 .milkdown-theme-nord blockquote > *:last-child  { margin-bottom: 0 !important; }
 
 
+/* ============================================================
+   公式块 — Typora 风格（编辑区 + 实时 KaTeX 预览）
+   ============================================================ */
+.math-block-card {
+  @apply my-4 rounded-xl border border-surface-200 dark:border-surface-700 overflow-hidden;
+}
+.math-block-input {
+  @apply w-full bg-surface-50 dark:bg-surface-950 border-0 outline-none resize-none
+         text-sm font-mono text-surface-800 dark:text-surface-200 px-4 py-3;
+}
+.math-block-preview {
+  @apply flex items-center justify-center px-4 py-3 text-lg
+         text-surface-800 dark:text-surface-200 cursor-pointer;
+  overflow-x: auto;
+  min-height: 40px;
+}
+.math-block-preview .katex { font-size: 1.1em; }
+/* 只读模式：融入正文，像普通段落 */
+.math-block-card-preview {
+  margin: 0.125rem 0;
+  border: none;
+  border-radius: 0;
+}
+.math-block-card-preview .math-block-preview {
+  padding: 0 1rem;
+  min-height: 0;
+}
+.math-block-card-preview .math-block-preview .katex { font-size: 1em; }
+
 /* --- 代码块 --- */
 .milkdown-theme-nord pre {
   font-size: 0.9375rem !important;

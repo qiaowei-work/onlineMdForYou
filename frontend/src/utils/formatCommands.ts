@@ -6,5 +6,5 @@ export type FormatCommand =
   | 'paragraph'
   | 'heading1' | 'heading2' | 'heading3'
   | 'bulletList' | 'orderedList'
-  | 'blockquote' | 'codeBlock'
+  | 'blockquote' | 'codeBlock' | 'math'
   | 'link' | 'image' | 'table' | 'horizontalRule';
