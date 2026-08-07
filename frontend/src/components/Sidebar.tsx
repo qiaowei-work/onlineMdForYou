@@ -502,7 +502,7 @@ export default function Sidebar({ onSelectArticle, activeArticleId, refreshKey }
     <div className="h-full flex flex-col relative">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-3 border-b border-surface-200 dark:border-surface-700">
-        <span className="text-xs font-semibold text-surface-400 uppercase tracking-wider">
+        <span className="text-lg font-semibold text-surface-400 uppercase tracking-wider">
           文件管理
         </span>
         <div className="relative">
