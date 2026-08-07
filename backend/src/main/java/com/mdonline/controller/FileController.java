@@ -1,7 +1,6 @@
 package com.mdonline.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,8 +15,7 @@ import java.util.UUID;
 @RestController
 public class FileController {
 
-    @Value("${app.upload-dir:./uploads}")
-    private String uploadDir;
+    private final Path uploadDir = Paths.get(System.getProperty("user.dir"), "uploads");
 
     @Operation(summary = "上传图片")
     @PostMapping("/api/upload")
@@ -36,11 +34,10 @@ public class FileController {
         String filename = UUID.randomUUID() + ext;
 
         // 确保目录存在
-        Path dir = Paths.get(uploadDir);
-        if (!Files.exists(dir)) Files.createDirectories(dir);
+        if (!Files.exists(uploadDir)) Files.createDirectories(uploadDir);
 
         // 保存文件
-        File dest = dir.resolve(filename).toFile();
+        File dest = uploadDir.resolve(filename).toFile();
         file.transferTo(dest);
 
         String url = "/uploads/" + filename;

@@ -211,10 +211,9 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
               form.append('file', file);
               const res = await fetch('/api/upload', { method: 'POST', body: form });
               const data = await res.json();
-              const view = editorRef.current?.ctx.get(editorViewCtx);
-              if (view) {
-                const tr = view.state.tr.insertText(`![](${data.url})`, view.state.selection.from);
-                view.dispatch(tr);
+              const editor = editorRef.current;
+              if (editor) {
+                editor.ctx.get(commandsCtx).call('InsertImage', { src: data.url });
               }
             } catch (err) {
               console.error('图片粘贴上传失败', err);
@@ -384,10 +383,7 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
               form.append('file', file);
               const res = await fetch('/api/upload', { method: 'POST', body: form });
               const data = await res.json();
-              const url = data.url;
-              const view2 = editor.ctx.get(editorViewCtx);
-              const tr = view2.state.tr.insertText(`![](${url})`, view2.state.selection.from);
-              view2.dispatch(tr);
+              editor.ctx.get(commandsCtx).call('InsertImage', { src: data.url });
             } catch (err) {
               console.error('图片上传失败', err);
             }
