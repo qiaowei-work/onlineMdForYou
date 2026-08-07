@@ -208,6 +208,20 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
         const editor = editorRef.current;
         if (!editor) return;
 
+        // 光标在代码块中 → 禁止所有格式操作（必须先于 focus 检查）
+        {
+          const view = editor.ctx.get(editorViewCtx);
+          try {
+            const { $from, $to } = view.state.selection;
+            for (const $p of [$from, $to]) {
+              for (let d = 1; d <= $p.depth; d++) {
+                const n = $p.node(d);
+                if (n?.type.name === 'code_block' || n?.type.name === 'fence') return;
+              }
+            }
+          } catch { /* ignore */ }
+        }
+
         // 先聚焦编辑器（防止点击工具栏导致失焦）
         try {
           editor.ctx.get(editorViewCtx).focus();
