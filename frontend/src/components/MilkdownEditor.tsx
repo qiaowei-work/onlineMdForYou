@@ -275,18 +275,16 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
 
         const view = editor.ctx.get(editorViewCtx);
 
-        // --- 引用块：已在引用中则不做任何操作 ---
+        // --- 引用块 toggle：包裹 / 取消 ---
         if (cmd === 'blockquote') {
-          try {
-            const $pos = view.state.doc.resolve(view.state.selection.main.from);
-            let inBlockquote = false;
-            for (let d = 1; d <= $pos.depth; d++) {
-              if ($pos.node(d)?.type.name === 'blockquote') { inBlockquote = true; break; }
-            }
-            if (!inBlockquote) {
-              editor.ctx.get(commandsCtx).call('WrapInBlockquote');
-            }
-          } catch {
+          const $pos = view.state.doc.resolve(view.state.selection.main.from);
+          let inBlockquote = false;
+          for (let d = 1; d <= $pos.depth; d++) {
+            if ($pos.node(d)?.type.name === 'blockquote') { inBlockquote = true; break; }
+          }
+          if (inBlockquote) {
+            liftBlock(view);
+          } else {
             editor.ctx.get(commandsCtx).call('WrapInBlockquote');
           }
           return;
