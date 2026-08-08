@@ -7,4 +7,5 @@ export type FormatCommand =
   | 'heading1' | 'heading2' | 'heading3'
   | 'bulletList' | 'orderedList'
   | 'blockquote' | 'codeBlock' | 'math'
-  | 'link' | 'image' | 'table' | 'horizontalRule';
+  | 'link' | 'image' | 'table' | 'horizontalRule'
+  | 'emoji';

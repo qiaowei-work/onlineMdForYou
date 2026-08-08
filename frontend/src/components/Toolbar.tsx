@@ -16,6 +16,7 @@ import {
   Table,
   Minus,
   Sigma,
+  Smile,
 } from 'lucide-react';
 import type { FormatCommand } from '../utils/formatCommands';
 
@@ -30,6 +31,7 @@ const tools: { icon: typeof Bold; label: string; cmd: FormatCommand; tip: string
   { icon: Code, label: '行内代码', cmd: 'inlineCode', tip: '' },
   { icon: Link, label: '链接', cmd: 'link', tip: 'Ctrl+K' },
   { icon: Image, label: '图片', cmd: 'image', tip: '' },
+  { icon: Smile, label: '表情', cmd: 'emoji', tip: '' },
 ];
 
 const headings: { icon: typeof Heading1; label: string; cmd: FormatCommand; tip: string }[] = [
