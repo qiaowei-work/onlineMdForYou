@@ -279,11 +279,16 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
         if (cmd === 'blockquote') {
           const $pos = view.state.doc.resolve(view.state.selection.main.from);
           let inBlockquote = false;
+          let bqDepth = 0;
           for (let d = 1; d <= $pos.depth; d++) {
-            if ($pos.node(d)?.type.name === 'blockquote') { inBlockquote = true; break; }
+            if ($pos.node(d)?.type.name === 'blockquote') { inBlockquote = true; bqDepth = d; break; }
           }
           if (inBlockquote) {
-            liftBlock(view);
+            // 解除 blockquote：把 blockquote 的内容提到它的父级
+            const from = $pos.start(bqDepth) - 1;
+            const to = $pos.end(bqDepth) + 1;
+            const inner = $pos.node(bqDepth).content;
+            view.dispatch(view.state.tr.replaceWith(from, to, inner));
           } else {
             editor.ctx.get(commandsCtx).call('WrapInBlockquote');
           }
