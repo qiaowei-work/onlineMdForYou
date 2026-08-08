@@ -242,16 +242,19 @@
   margin-bottom: 0.75rem !important;
 }
 
-/* --- 引用块：垂直居中 --- */
+/* --- 引用块：垂直居中，字体与正文一致 --- */
 .milkdown-theme-nord blockquote {
   margin-top: 1rem !important;
   margin-bottom: 1rem !important;
   padding: 0.75rem 1.25rem !important;
+  font-size: 1.125rem !important;
+  line-height: 1.75 !important;
   display: flex;
   flex-direction: column;
   justify-content: center;
   @apply border-l-4 border-accent-500 bg-surface-50 dark:bg-surface-900/50;
 }
+.milkdown-theme-nord blockquote p { margin-bottom: 0.5rem !important; }
 /* 引用块内标题降级 — 引用是次要内容，标题不应与正文同级 */
 .milkdown-theme-nord blockquote h1 { font-size: 1.125rem !important; font-weight: 600 !important; }
 .milkdown-theme-nord blockquote h2 { font-size: 1rem !important; font-weight: 600 !important; }

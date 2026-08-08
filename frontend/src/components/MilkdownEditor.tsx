@@ -38,7 +38,7 @@ import { minimalSetup } from 'codemirror';
 import { setupTableHandles } from '../plugins/tableHandles';
 import type { FormatCommand } from '../utils/formatCommands';
 
-/** 自实现 lift：将当前节点从其父节点中提升出来 */
+/** 自实现 lift：将当前节点的父块提升出来 */
 function liftBlock(view: EditorView): boolean {
   const { state, dispatch } = view;
   const $pos = state.doc.resolve(state.selection.main.from);
@@ -47,10 +47,25 @@ function liftBlock(view: EditorView): boolean {
   const node = $pos.node(depth);
   const from = $pos.start(depth) - 1;
   const to = $pos.end(depth) + 1;
-  // 用节点的内容替换节点本身（含父包裹标签）
   const inner = node.content;
   const tr = state.tr.replaceWith(from, to, inner);
   dispatch(tr);
+  return true;
+}
+
+/** 解除 blockquote：找到 blockquote 祖先并提升其内容 */
+function liftBlockquote(view: EditorView): boolean {
+  const { state, dispatch } = view;
+  const $pos = state.doc.resolve(state.selection.main.from);
+  let bqDepth = 0;
+  for (let d = 1; d <= $pos.depth; d++) {
+    if ($pos.node(d)?.type.name === 'blockquote') { bqDepth = d; break; }
+  }
+  if (bqDepth === 0) return false;
+  const node = $pos.node(bqDepth);
+  const from = $pos.start(bqDepth) - 1;
+  const to = $pos.end(bqDepth) + 1;
+  dispatch(state.tr.replaceWith(from, to, node.content));
   return true;
 }
 
@@ -280,16 +295,11 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
         if (cmd === 'blockquote') {
           const $pos = view.state.doc.resolve(view.state.selection.main.from);
           let inBlockquote = false;
-          let bqDepth = 0;
           for (let d = 1; d <= $pos.depth; d++) {
-            if ($pos.node(d)?.type.name === 'blockquote') { inBlockquote = true; bqDepth = d; break; }
+            if ($pos.node(d)?.type.name === 'blockquote') { inBlockquote = true; break; }
           }
           if (inBlockquote) {
-            // 解除 blockquote：把 blockquote 的内容提到它的父级
-            const from = $pos.start(bqDepth) - 1;
-            const to = $pos.end(bqDepth) + 1;
-            const inner = $pos.node(bqDepth).content;
-            view.dispatch(view.state.tr.replaceWith(from, to, inner));
+            liftBlockquote(view);
           } else {
             editor.ctx.get(commandsCtx).call('WrapInBlockquote');
           }
