@@ -90,14 +90,15 @@ export function exportPDF(markdown: string, title = '未命名文档') {
   const iframe = document.createElement('iframe');
   iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none';
   document.body.appendChild(iframe);
+  let printed = false;
   const printAndRemove = () => {
+    if (printed) return;
+    printed = true;
     try { iframe.contentWindow?.print(); } catch { /* ignore */ }
     setTimeout(() => document.body.removeChild(iframe), 500);
   };
   iframe.contentWindow?.document.write(doc);
   iframe.contentWindow?.document.close();
-  // 等 iframe 加载完成后打印
   iframe.onload = printAndRemove;
-  // 兜底：如果 onload 不触发，延迟打印
   setTimeout(printAndRemove, 2000);
 }
