@@ -97,7 +97,7 @@ export function exportHTML(markdown: string, title = '未命名文档') {
 }
 
 export function exportPDF(markdown: string, title = '未命名文档') {
-  const body = marked.parse(markdown) as string;
+  const body = marked.parse(preprocessMath(markdown)) as string;
   const doc = buildDocument(title, body);
   // 用隐藏 iframe 触发打印（避免 window.open 被拦截）
   const iframe = document.createElement('iframe');
