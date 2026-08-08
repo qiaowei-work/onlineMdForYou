@@ -129,6 +129,7 @@ function PopupMenu({
 
 function FolderNode({
   folder, depth, articles, onSelect, activeId, onRefresh, onPrompt, onConfirmDlg, allFolders,
+  expandedIds, onToggleExpand,
 }: {
   folder: FolderData; depth: number; articles: ArticleData[];
   onSelect: (id: number) => void; activeId: number | null;
@@ -136,8 +137,10 @@ function FolderNode({
   onPrompt: (title: string, defaultValue: string, cb: (v: string) => void) => void;
   onConfirmDlg: (title: string, desc: string, cb: () => void) => void;
   allFolders: FolderData[];
+  expandedIds: Set<number>;
+  onToggleExpand: (id: number) => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const expanded = expandedIds.has(folder.id);
   const [hovered, setHovered] = useState(false);
   const [menuType, setMenuType] = useState<'add' | 'more' | null>(null);
   const [renameInput, setRenameInput] = useState('');
@@ -223,7 +226,7 @@ function FolderNode({
         onDrop={handleDrop}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => onToggleExpand(folder.id)}
       >
         {/* 箭头区 27px */}
         <span className="w-[27px] flex justify-center shrink-0">
@@ -311,6 +314,7 @@ function FolderNode({
             <FolderNode
               key={child.id} folder={child} depth={depth + 1}
               articles={articles} onSelect={onSelect} activeId={activeId} onRefresh={onRefresh} onPrompt={onPrompt} onConfirmDlg={onConfirmDlg} allFolders={allFolders}
+              expandedIds={expandedIds} onToggleExpand={onToggleExpand}
             />
           ))}
           {folderArticles.map((a) => (
@@ -498,6 +502,15 @@ export default function Sidebar({ onSelectArticle, activeArticleId, refreshKey }
 
   const [topMenuOpen, setTopMenuOpen] = useState(false);
   const topBtnRef = useRef<HTMLButtonElement>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+
+  const toggleExpand = (id: number) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   const openPrompt = (title: string, defaultValue: string, onConfirm: (v: string) => void) => {
     modal.open({ title, mode: 'prompt', defaultValue }, onConfirm);
@@ -592,6 +605,7 @@ export default function Sidebar({ onSelectArticle, activeArticleId, refreshKey }
                 activeId={activeArticleId} onRefresh={reload}
                 onPrompt={openPrompt} onConfirmDlg={openConfirm}
                 allFolders={folders}
+                expandedIds={expandedIds} onToggleExpand={toggleExpand}
               />
             ))}
             {rootArticles.map((a) => (
