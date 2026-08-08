@@ -190,10 +190,11 @@ function FolderNode({
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); };
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add('drag-over'); };
   const handleDragLeave = (e: React.DragEvent) => { e.currentTarget.classList.remove('drag-over'); };
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     e.currentTarget.classList.remove('drag-over');
     const raw = e.dataTransfer.getData('text/plain');
     if (!raw) return;
@@ -257,15 +258,14 @@ function FolderNode({
           )}
         </div>
 
-        {/* 操作按钮 — hover 显示 */}
-        {hovered && !renaming && (
-          <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-            {/* 新建 */}
-            <button
-              ref={addBtnRef}
-              className="p-1 rounded-md hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors"
-              onClick={() => setMenuType(menuType === 'add' ? null : 'add')}
-            >
+        {/* 操作按钮 — 始终占位，hover 显示 */}
+        <div className={`flex items-center gap-0.5 shrink-0 transition-opacity ${hovered && !renaming ? 'opacity-100' : 'opacity-0'}`}
+             onClick={(e) => e.stopPropagation()}>
+          <button
+            ref={addBtnRef}
+            className="p-1 rounded-md hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors"
+            onClick={() => setMenuType(menuType === 'add' ? null : 'add')}
+          >
               <Plus size={22} className="text-surface-400" />
             </button>
             {/* 更多 */}
@@ -277,7 +277,6 @@ function FolderNode({
               <MoreHorizontal size={20} className="text-surface-400" />
             </button>
           </div>
-        )}
       </div>
 
       {/* 新建菜单 */}
@@ -431,16 +430,14 @@ function ArticleRow({
         )}
       </div>
 
-      {hovered && !renaming && (
-        <button
-          ref={moreRef}
-          className="p-1 rounded-md hover:bg-surface-200 dark:hover:bg-surface-700
-                     transition-colors shrink-0"
-          onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); setMoveMode(false); }}
-        >
-          <MoreHorizontal size={20} className="text-surface-400" />
-        </button>
-      )}
+      <button
+        ref={moreRef}
+        className={`p-1 rounded-md hover:bg-surface-200 dark:hover:bg-surface-700
+                   transition-all shrink-0 ${hovered && !renaming ? 'opacity-100' : 'opacity-0'}`}
+        onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); setMoveMode(false); }}
+      >
+        <MoreHorizontal size={20} className="text-surface-400" />
+      </button>
 
       {menuOpen && !moveMode && (
         <PopupMenu
@@ -565,8 +562,25 @@ export default function Sidebar({ onSelectArticle, activeArticleId, refreshKey }
         </div>
       </div>
 
-      {/* Tree */}
-      <div className="flex-1 overflow-y-auto py-2">
+      {/* Tree — 根目录 drop zone */}
+      <div className="flex-1 overflow-y-auto py-2"
+        onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }}
+        onDragLeave={(e) => { e.currentTarget.classList.remove('drag-over'); }}
+        onDrop={async (e) => {
+          e.preventDefault();
+          e.currentTarget.classList.remove('drag-over');
+          const raw = e.dataTransfer.getData('text/plain');
+          if (!raw) return;
+          const dragData = JSON.parse(raw) as { type: string; id: number };
+          if (dragData.type === 'article') {
+            await fetch(`/api/articles/${dragData.id}/move?folderId=0`, { method: 'PUT' });
+            reload();
+          } else if (dragData.type === 'folder') {
+            await fetch(`/api/folders/${dragData.id}/move?parentId=0`, { method: 'PUT' });
+            reload();
+          }
+        }}
+      >
         {loading ? (
           <div className="px-4 py-8 text-xs text-surface-400 text-center">加载中...</div>
         ) : (
