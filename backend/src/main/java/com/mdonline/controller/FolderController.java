@@ -66,6 +66,28 @@ public class FolderController {
         return Result.ok(existing);
     }
 
+    @Operation(summary = "移动文件夹到新父节点")
+    @PutMapping("/{id}/move")
+    public Result<Void> move(
+            @Parameter(description = "文件夹 ID") @PathVariable Long id,
+            @Parameter(description = "新父文件夹 ID") @RequestParam Long parentId) {
+        Folder existing = folderService.getById(id);
+        if (existing == null) return Result.fail(404, "文件夹不存在");
+        folderService.moveFolder(id, parentId);
+        return Result.ok();
+    }
+
+    @Operation(summary = "更新文件夹排序")
+    @PutMapping("/{id}/sort")
+    public Result<Void> sort(
+            @Parameter(description = "文件夹 ID") @PathVariable Long id,
+            @Parameter(description = "新排序值") @RequestParam Integer sortOrder) {
+        Folder existing = folderService.getById(id);
+        if (existing == null) return Result.fail(404, "文件夹不存在");
+        folderService.updateSort(id, sortOrder);
+        return Result.ok();
+    }
+
     @Operation(summary = "删除文件夹（级联软删除子文件夹和文章）")
     @DeleteMapping("/{id}")
     public Result<Void> delete(

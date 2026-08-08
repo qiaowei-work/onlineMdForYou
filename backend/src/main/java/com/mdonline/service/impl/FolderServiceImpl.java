@@ -37,7 +37,6 @@ public class FolderServiceImpl extends ServiceImpl<FolderMapper, Folder> impleme
         while (!queue.isEmpty()) {
             Long currentId = queue.poll();
             folderIds.add(currentId);
-            // 找直接子文件夹
             List<Folder> children = list(new LambdaQueryWrapper<Folder>()
                     .eq(Folder::getParentId, currentId));
             for (Folder child : children) {
@@ -57,5 +56,34 @@ public class FolderServiceImpl extends ServiceImpl<FolderMapper, Folder> impleme
                 new LambdaUpdateWrapper<Article>()
                         .in(Article::getFolderId, folderIds)
                         .set(Article::getDeleted, true));
+    }
+
+    @Override
+    public void moveFolder(Long folderId, Long newParentId) {
+        // 循环校验：newParentId 不能是 folderId 自身或其子孙
+        if (newParentId.equals(folderId)) return;
+        List<Long> descendants = new ArrayList<>();
+        Deque<Long> queue = new ArrayDeque<>();
+        queue.add(folderId);
+        while (!queue.isEmpty()) {
+            Long currentId = queue.poll();
+            descendants.add(currentId);
+            list(new LambdaQueryWrapper<Folder>().eq(Folder::getParentId, currentId))
+                    .forEach(f -> queue.add(f.getId()));
+        }
+        if (descendants.contains(newParentId)) return; // 循环引用，拒绝
+
+        Folder folder = getById(folderId);
+        if (folder == null) return;
+        folder.setParentId(newParentId);
+        updateById(folder);
+    }
+
+    @Override
+    public void updateSort(Long folderId, Integer sortOrder) {
+        Folder folder = getById(folderId);
+        if (folder == null) return;
+        folder.setSortOrder(sortOrder);
+        updateById(folder);
     }
 }

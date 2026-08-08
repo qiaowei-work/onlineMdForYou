@@ -12,4 +12,14 @@ public interface FolderService extends IService<Folder> {
      * 级联软删除：删除文件夹及其所有子文件夹和文章
      */
     void cascadeDelete(Long folderId);
+
+    /**
+     * 移动文件夹到新的父节点（含循环校验）
+     */
+    void moveFolder(Long folderId, Long newParentId);
+
+    /**
+     * 更新文件夹排序
+     */
+    void updateSort(Long folderId, Integer sortOrder);
 }

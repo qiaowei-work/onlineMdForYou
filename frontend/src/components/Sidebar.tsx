@@ -190,21 +190,52 @@ function FolderNode({
     }
   };
 
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); };
+  const handleDragLeave = (e: React.DragEvent) => { e.currentTarget.classList.remove('drag-over'); };
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    const raw = e.dataTransfer.getData('text/plain');
+    if (!raw) return;
+    const dragData = JSON.parse(raw) as { type: string; id: number };
+    if (dragData.type === 'article') {
+      // 文章拖入文件夹
+      await fetch(`/api/articles/${dragData.id}/move?folderId=${folder.id}`, { method: 'PUT' });
+      onRefresh();
+    } else if (dragData.type === 'folder' && dragData.id !== folder.id) {
+      // 文件夹拖入另一个文件夹
+      await fetch(`/api/folders/${dragData.id}/move?parentId=${folder.id}`, { method: 'PUT' });
+      onRefresh();
+    }
+  };
+
   return (
     <div>
-      {/* 文件夹行 */}
+      {/* 文件夹行 — 三列固定布局 */}
       <div
-        className="flex items-center justify-between group pr-2 cursor-pointer"
-        style={{ paddingLeft: `${8 + depth * 16}px` }}
+        className="flex items-center justify-between group pr-2 cursor-pointer py-1.5"
+        style={{ paddingLeft: `${depth * 24}px` }}
+        draggable
+        onDragStart={(e) => { e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'folder', id: folder.id })); }}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex items-center gap-1.5 py-1.5 min-w-0">
-          {expanded ? <ChevronDown size={21} /> : <ChevronRight size={21} />}
+        {/* 箭头区 27px */}
+        <span className="w-[27px] flex justify-center shrink-0">
+          {expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+        </span>
+        {/* 图标区 24px */}
+        <span className="w-[24px] flex justify-center shrink-0">
           {expanded
-            ? <FolderOpen size={22} className="text-amber-500 shrink-0" />
-            : <Folder size={22} className="text-amber-500 shrink-0" />}
+            ? <FolderOpen size={20} className="text-amber-500" />
+            : <Folder size={20} className="text-amber-500" />}
+        </span>
+        {/* 名称 */}
+        <div className="min-w-0 flex-1">
           {renaming ? (
             <input
               autoFocus
@@ -217,7 +248,7 @@ function FolderNode({
               }}
               onChange={(e) => setRenameInput(e.target.value)}
               onClick={(e) => e.stopPropagation()}
-      onBlur={() => handleRename()}
+              onBlur={() => handleRename()}
             />
           ) : (
             <span className="text-sm text-surface-700 dark:text-surface-300 truncate select-none">
@@ -362,17 +393,25 @@ function ArticleRow({
 
   return (
     <div
-      className="flex items-center justify-between group pr-2"
-      style={{ paddingLeft: `${8 + depth * 16 + 0}px` }}
+      className="flex items-center justify-between group pr-2 cursor-pointer py-1.5"
+      style={{ paddingLeft: `${depth * 24}px` }}
+      draggable
+      onDragStart={(e) => { e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'article', id: article.id })); }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={() => onSelect(article.id)}
     >
-      <div className={`flex items-center gap-1.5 py-1.5 min-w-0 rounded-md px-2 cursor-pointer
+      {/* 箭头区 — 空占位 */}
+      <span className="w-[27px] shrink-0" />
+      {/* 图标区 */}
+      <span className="w-[24px] flex justify-center shrink-0">
+        <FileText size={20} className="text-blue-500" />
+      </span>
+      {/* 名称 */}
+      <div className={`min-w-0 flex-1 rounded-md px-2 cursor-pointer
                        ${activeId === article.id
                           ? 'bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-400'
                           : 'text-surface-600 dark:text-surface-400'}`}>
-        <FileText size={22} className="text-blue-500 shrink-0" />
         {renaming ? (
           <input
             autoFocus
@@ -385,7 +424,7 @@ function ArticleRow({
             }}
             onChange={(e) => setRenameInput(e.target.value)}
             onClick={(e) => e.stopPropagation()}
-            onBlur={() => setRenaming(false)}
+            onBlur={() => handleRename()}
           />
         ) : (
           <span className="text-sm truncate select-none">{article.title}</span>
