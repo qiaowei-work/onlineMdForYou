@@ -345,7 +345,6 @@ function ArticleRow({
   const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [renameInput, setRenameInput] = useState('');
-  const [moveMode, setMoveMode] = useState(false);
   const moreRef = useRef<HTMLButtonElement>(null);
 
   const handleRename = async () => {
@@ -366,33 +365,6 @@ function ArticleRow({
       onRefresh();
     });
   };
-
-  const handleMove = async (folderId: number) => {
-    await fetch(`/api/articles/${article.id}/move?folderId=${folderId}`, { method: 'PUT' });
-    setMoveMode(false);
-    setMenuOpen(false);
-    onRefresh();
-  };
-
-  // 递归扁平化文件夹列表
-  const flattenFolders = (fds: FolderData[], prefix = ''): { id: number; label: string }[] => {
-    const result: { id: number; label: string }[] = [];
-    for (const f of fds) {
-      if (f.id !== article.folderId) {
-        result.push({ id: f.id, label: prefix + f.name });
-      }
-      if (f.children.length > 0) {
-        result.push(...flattenFolders(f.children, prefix + '  '));
-      }
-    }
-    return result;
-  };
-
-  const folderOptions = flattenFolders(folders);
-  // 根目录选项
-  if (article.folderId !== 0) {
-    folderOptions.unshift({ id: 0, label: '根目录' });
-  }
 
   return (
     <div
@@ -438,34 +410,18 @@ function ArticleRow({
         ref={moreRef}
         className={`p-1 rounded-md hover:bg-surface-200 dark:hover:bg-surface-700
                    transition-all shrink-0 ${hovered && !renaming ? 'opacity-100' : 'opacity-0'}`}
-        onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); setMoveMode(false); }}
+        onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
       >
         <MoreHorizontal size={20} className="text-surface-400" />
       </button>
 
-      {menuOpen && !moveMode && (
+      {menuOpen && (
         <PopupMenu
           anchorRef={moreRef}
           onClose={() => setMenuOpen(false)}
-          separatorAfter={1}
           items={[
             { label: '重命名', icon: Pencil, onClick: () => { setRenameInput(article.title); setRenaming(true); } },
-            { label: '移动到...', icon: FolderPlus, onClick: () => setMoveMode(true), keepOpen: true },
             { label: '删除', icon: Trash2, danger: true, onClick: handleDelete },
-          ]}
-        />
-      )}
-
-      {menuOpen && moveMode && (
-        <PopupMenu
-          anchorRef={moreRef}
-          onClose={() => { setMenuOpen(false); setMoveMode(false); }}
-          items={[
-            ...folderOptions.map((f) => ({
-              label: f.label,
-              icon: Folder as typeof FileText,
-              onClick: () => handleMove(f.id),
-            })),
           ]}
         />
       )}
