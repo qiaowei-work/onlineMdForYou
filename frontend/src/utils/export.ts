@@ -65,6 +65,19 @@ ${body}
 </html>`;
 }
 
+/** 预处理：将 $$...$$ 和 $...$ 替换为 KaTeX 可渲染的 HTML */
+function preprocessMath(md: string): string {
+  // 块级公式 $$...$$
+  md = md.replace(/\$\$([^$]+)\$\$/g, (_, formula) =>
+    `<div class="math-block">${formula.trim()}</div>`
+  );
+  // 行内公式 $...$（不匹配 $$）
+  md = md.replace(/(?<!\$)\$(?!\$)([^$]+?)\$(?!\$)/g, (_, formula) =>
+    `<span class="math-inline">${formula.trim()}</span>`
+  );
+  return md;
+}
+
 function downloadBlob(content: string, filename: string, mime: string) {
   const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -78,7 +91,7 @@ function downloadBlob(content: string, filename: string, mime: string) {
 }
 
 export function exportHTML(markdown: string, title = '未命名文档') {
-  const body = marked.parse(markdown) as string;
+  const body = marked.parse(preprocessMath(markdown)) as string;
   const doc = buildDocument(title, body);
   downloadBlob(doc, `${title.replace(/\.md$/, '')}.html`, 'text/html;charset=utf-8');
 }
