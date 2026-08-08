@@ -507,10 +507,10 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
           {/* 自定义链接输入浮层 */}
           {linkInput?.visible && (
             <>
-              {/* 遮罩层 — 点击关闭 */}
+              {/* 遮罩层 — 点击任意处关闭 */}
               <div
-                className="absolute inset-0 z-[998]"
-                onClick={() => setLinkInput(null)}
+                className="fixed inset-0 z-[998]"
+                onClick={() => { setLinkInput(null); linkUrlRef.current = ''; }}
               />
               {/* 输入框 — 顶部居中 */}
               <div
