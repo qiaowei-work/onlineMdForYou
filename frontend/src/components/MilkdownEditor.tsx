@@ -1,4 +1,5 @@
-import { forwardRef, useImperativeHandle, useRef, useEffect, useState } from 'react';
+import React, { forwardRef, useImperativeHandle, useRef, useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
 import { Editor, rootCtx, defaultValueCtx, editorViewCtx, commandsCtx } from '@milkdown/kit/core';
 import { getMarkdown, replaceAll, insert } from '@milkdown/kit/utils';
 import { $view } from '@milkdown/utils';
@@ -379,29 +380,25 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
           popover.style.cssText = 'position:fixed;z-index:1001;left:50%;top:80px;transform:translateX(-50%)';
           document.body.appendChild(popover);
 
-          const picker = document.createElement('div');
-          picker.style.cssText = 'background:white;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.15);padding:8px;display:grid;grid-template-columns:repeat(9,1fr);gap:2px';
-          const EMOJIS = ['😀','😂','🤣','😍','🥰','😘','😜','🤪','😎','🤩','🥳','😢','😡','👍','👎','👏','🙌','💪','🤝','🙏','❤️','🔥','⭐','✨','🎉','🎂','🍕','☕','🚀','💡','⚠️','✅','❌','💯'];
-          EMOJIS.forEach(emoji => {
-            const btn = document.createElement('button');
-            btn.textContent = emoji;
-            btn.style.cssText = 'font-size:22px;padding:6px;border:none;background:transparent;cursor:pointer;border-radius:8px';
-            btn.onmouseenter = () => btn.style.background = '#f1f5f9';
-            btn.onmouseleave = () => btn.style.background = 'transparent';
-            btn.onclick = () => {
-              editor.ctx.get(editorViewCtx).dispatch(
-                editor.ctx.get(editorViewCtx).state.tr.insertText(emoji, editor.ctx.get(editorViewCtx).state.selection.from)
-              );
-              popover.remove(); overlay.remove();
-            };
-            picker.appendChild(btn);
-          });
-          popover.appendChild(picker);
-
           const overlay = document.createElement('div');
           overlay.style.cssText = 'position:fixed;inset:0;z-index:1000';
           overlay.onclick = () => { popover.remove(); overlay.remove(); };
           document.body.appendChild(overlay);
+
+          import('emoji-picker-react').then(({ default: Picker, EmojiStyle, Theme }) => {
+            const root = createRoot(popover);
+            root.render(React.createElement(Picker, {
+              emojiStyle: EmojiStyle.NATIVE,
+              theme: document.documentElement.classList.contains('dark') ? Theme.DARK : Theme.LIGHT,
+              onEmojiClick: (e: any) => {
+                editor.ctx.get(editorViewCtx).dispatch(
+                  editor.ctx.get(editorViewCtx).state.tr.insertText(e.emoji, editor.ctx.get(editorViewCtx).state.selection.from)
+                );
+                root.unmount(); popover.remove(); overlay.remove();
+              },
+              lazyLoadEmojis: true,
+            }));
+          });
           return;
         }
 
