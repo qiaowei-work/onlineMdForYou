@@ -50,15 +50,15 @@ function buildDocument(title: string, body: string): string {
 </head>
 <body>
 ${body}
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"><\/script>
-<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js">${'<'}/script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js">${'<'}/script>
 <script>
 (function(){
   document.querySelectorAll('pre code').forEach(function(b){hljs.highlightElement(b)});
   document.querySelectorAll('.math-block').forEach(function(b){try{katex.render(b.getAttribute('data-value')||b.textContent,b,{displayMode:true,throwOnError:false})}catch(e){}});
   document.querySelectorAll('.math-inline').forEach(function(b){try{katex.render(b.getAttribute('data-value')||b.textContent,b,{displayMode:false,throwOnError:false})}catch(e){}});
 })();
-<\/script>
+${'<'}/script>
 </body>
 </html>`;
 }
