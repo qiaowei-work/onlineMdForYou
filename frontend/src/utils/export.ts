@@ -46,7 +46,15 @@ function buildDocument(title: string, body: string): string {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${title.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"><\\/script>
 <style>${STYLES}</style>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('.math-block').forEach(function(b){try{katex.render(b.getAttribute('data-value')||b.textContent,b,{displayMode:true,throwOnError:false})}catch(e){}});
+  document.querySelectorAll('.math-inline').forEach(function(b){try{katex.render(b.getAttribute('data-value')||b.textContent,b,{displayMode:false,throwOnError:false})}catch(e){}});
+});
+</script>
 </head>
 <body>
 ${body}
@@ -69,9 +77,9 @@ export function exportHTML(markdown: string, title = '未命名文档') {
 export function exportPDF(markdown: string, title = '未命名文档') {
   const body = marked.parse(markdown) as string;
   const doc = buildDocument(title, body);
-  const w = window.open('', '_blank');
+  const blob = new Blob([doc], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const w = window.open(url, '_blank');
   if (!w) return;
-  w.onload = () => { w.print(); };
-  w.document.write(doc);
-  w.document.close();
+  w.onload = () => { w.print(); URL.revokeObjectURL(url); };
 }
