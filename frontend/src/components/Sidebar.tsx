@@ -137,7 +137,7 @@ function FolderNode({
   onConfirmDlg: (title: string, desc: string, cb: () => void) => void;
   allFolders: FolderData[];
 }) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [menuType, setMenuType] = useState<'add' | 'more' | null>(null);
   const [renameInput, setRenameInput] = useState('');
