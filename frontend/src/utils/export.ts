@@ -86,6 +86,18 @@ export function exportHTML(markdown: string, title = '未命名文档') {
 export function exportPDF(markdown: string, title = '未命名文档') {
   const body = marked.parse(markdown) as string;
   const doc = buildDocument(title, body);
-  // 导出为 HTML 文件（浏览器打开后 Ctrl+P 即可打印为 PDF）
-  downloadBlob(doc, `${title.replace(/\.md$/, '')}.html`, 'text/html;charset=utf-8');
+  // 用隐藏 iframe 触发打印（避免 window.open 被拦截）
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none';
+  document.body.appendChild(iframe);
+  const printAndRemove = () => {
+    try { iframe.contentWindow?.print(); } catch { /* ignore */ }
+    setTimeout(() => document.body.removeChild(iframe), 500);
+  };
+  iframe.contentWindow?.document.write(doc);
+  iframe.contentWindow?.document.close();
+  // 等 iframe 加载完成后打印
+  iframe.onload = printAndRemove;
+  // 兜底：如果 onload 不触发，延迟打印
+  setTimeout(printAndRemove, 2000);
 }
