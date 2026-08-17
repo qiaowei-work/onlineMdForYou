@@ -35,7 +35,7 @@ import { go } from '@codemirror/lang-go';
 import { cpp } from '@codemirror/lang-cpp';
 import { minimalSetup } from 'codemirror';
 
-import { setupTableHandles } from '../plugins/tableHandles';
+
 import type { FormatCommand } from '../utils/formatCommands';
 
 /** 自实现 lift：将当前节点的父块提升出来 */
@@ -193,12 +193,6 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
       const container = containerRef.current;
       if (!container) return;
 
-      const cleanup = setupTableHandles(
-        container,
-        () => editorRef.current?.ctx.get(editorViewCtx),
-        (name: string) => editorRef.current?.ctx.get(commandsCtx).call(name) ?? false,
-      );
-
       // 链接点击 → 在新标签页打开
       const handleClick = (e: MouseEvent) => {
         const target = e.target as HTMLElement;
@@ -241,7 +235,6 @@ const MilkdownEditor = forwardRef<MilkdownEditorHandle, MilkdownEditorProps>(
       container.addEventListener('paste', handlePaste);
 
       return () => {
-        cleanup.destroy();
         container.removeEventListener('click', handleClick, true);
         container.removeEventListener('paste', handlePaste);
       };

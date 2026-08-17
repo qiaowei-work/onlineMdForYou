@@ -199,24 +199,32 @@
   margin-top: 2rem !important;
   margin-bottom: 0.75rem !important;
   line-height: 1.3 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding-bottom: 0.5rem !important;
 }
 .milkdown-theme-nord h2 {
   font-size: 1.5rem !important;
   margin-top: 1.5rem !important;
   margin-bottom: 0.5rem !important;
   line-height: 1.35 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding-bottom: 0.4rem !important;
 }
 .milkdown-theme-nord h3 {
   font-size: 1.25rem !important;
   margin-top: 1.25rem !important;
   margin-bottom: 0.5rem !important;
   line-height: 1.4 !important;
+  border-bottom: 1px solid #edf2f7 !important;
+  padding-bottom: 0.35rem !important;
 }
 .milkdown-theme-nord h4 {
   font-size: 1.125rem !important;
   margin-top: 1rem !important;
   margin-bottom: 0.5rem !important;
   line-height: 1.45 !important;
+  border-bottom: 1px solid #edf2f7 !important;
+  padding-bottom: 0.3rem !important;
 }
 .milkdown-theme-nord h5,
 .milkdown-theme-nord h6 {
@@ -224,6 +232,8 @@
   margin-top: 0.75rem !important;
   margin-bottom: 0.25rem !important;
   line-height: 1.5 !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  padding-bottom: 0.25rem !important;
 }
 
 /* --- 段落 --- */
@@ -546,6 +556,19 @@
   background-color: #1e293b !important;
 }
 
+/* 深色模式标题横线 */
+.dark .milkdown-theme-nord h1,
+.dark .milkdown-theme-nord h2 {
+  border-bottom-color: #334155 !important;
+}
+.dark .milkdown-theme-nord h3,
+.dark .milkdown-theme-nord h4 {
+  border-bottom-color: #1e293b !important;
+}
+.dark .milkdown-theme-nord h5,
+.dark .milkdown-theme-nord h6 {
+  border-bottom-color: #1e293b !important;
+}
 
 /* --- 分割线 --- */
 .milkdown-theme-nord hr {
@@ -580,34 +603,6 @@
 }
 
 /* ============================================================
-   表格工具栏（悬浮在表格上方）
-   ============================================================ */
-.table-toolbar {
-  @apply z-50 flex items-center gap-0.5 px-2 py-1 rounded-lg
-         bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-600
-         shadow-lg transition-opacity duration-150;
-}
-.table-toolbar-label {
-  @apply text-xs text-surface-400 dark:text-surface-500 mr-1 font-medium;
-}
-.table-toolbar-btn {
-  @apply w-7 h-7 flex items-center justify-center rounded-md
-         text-xs font-bold cursor-pointer select-none
-         text-surface-600 dark:text-surface-300
-         hover:bg-surface-100 dark:hover:bg-surface-700
-         transition-colors duration-100;
-  border: none;
-  background: transparent;
-}
-@keyframes popup {
-  from { opacity: 0; transform: scale(0.95) translateY(-4px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.table-toolbar-btn.del {
-  @apply text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20;
-}
-
 /* 侧边栏拖拽高亮 */
 .drag-over {
   @apply bg-accent-50 dark:bg-accent-900/30 ring-2 ring-accent-400 rounded-md;
