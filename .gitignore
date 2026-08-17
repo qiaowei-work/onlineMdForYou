@@ -25,3 +25,6 @@ backend/target/
 # Environment
 .env
 .env.local
+
+# Runtime data
+data/
