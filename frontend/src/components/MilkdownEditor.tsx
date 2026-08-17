@@ -2,7 +2,8 @@ import React, { forwardRef, useImperativeHandle, useRef, useEffect, useState } f
 import { createRoot } from 'react-dom/client';
 import { Editor, rootCtx, defaultValueCtx, editorViewCtx, commandsCtx } from '@milkdown/kit/core';
 import { getMarkdown, replaceAll, insert } from '@milkdown/kit/utils';
-import { $view } from '@milkdown/utils';
+import { $view, $prose } from '@milkdown/utils';
+import { keymap } from '@milkdown/prose/keymap';
 import { commonmark } from '@milkdown/kit/preset/commonmark';
 import { gfm } from '@milkdown/kit/preset/gfm';
 import { history } from '@milkdown/kit/plugin/history';
@@ -37,6 +38,26 @@ import { minimalSetup } from 'codemirror';
 
 
 import type { FormatCommand } from '../utils/formatCommands';
+
+// 修复标题 Backspace 行为：直接转为段落，而非逐级降级
+const headingBackspaceKeymap = $prose(() =>
+  keymap({
+    Backspace: (state, dispatch) => {
+      const { $from } = state.selection;
+      const node = $from.node();
+      if (node.type.name === 'heading' && state.selection.empty && $from.parentOffset === 0) {
+        if (dispatch) {
+          const paragraph = state.schema.nodes.paragraph;
+          if (paragraph) {
+            dispatch(state.tr.setBlockType($from.before(), $from.after(), paragraph, {}));
+          }
+        }
+        return true;
+      }
+      return false;
+    },
+  })
+);
 
 /** 自实现 lift：将当前节点的父块提升出来 */
 function liftBlock(view: EditorView): boolean {
@@ -149,7 +170,8 @@ function MilkdownInner({
       .use(codeBlockComponent)
       .use(linkTooltipPlugin)
       .use(mathBlockView)
-      .use(math);
+      .use(math)
+      .use(headingBackspaceKeymap);
   });
 
   // 编辑器初始化完成后注册回调和通知外部
