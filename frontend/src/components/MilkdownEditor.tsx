@@ -4,6 +4,7 @@ import { Editor, rootCtx, defaultValueCtx, editorViewCtx, commandsCtx } from '@m
 import { getMarkdown, replaceAll, insert } from '@milkdown/kit/utils';
 import { $view, $prose } from '@milkdown/utils';
 import { keymap } from '@milkdown/prose/keymap';
+import { TextSelection } from '@milkdown/prose/state';
 import { commonmark } from '@milkdown/kit/preset/commonmark';
 import { gfm } from '@milkdown/kit/preset/gfm';
 import { history } from '@milkdown/kit/plugin/history';
@@ -51,6 +52,31 @@ const headingBackspaceKeymap = $prose(() =>
           if (paragraph) {
             dispatch(state.tr.setBlockType($from.before(), $from.after(), paragraph, {}));
           }
+        }
+        return true;
+      }
+      return false;
+    },
+  })
+);
+
+// $$ 输入后按回车 → 自动转换为公式块
+const mathBlockInputKeymap = $prose(() =>
+  keymap({
+    Enter: (state, dispatch) => {
+      const { $from } = state.selection;
+      const node = $from.node();
+      // 代码块内不触发
+      if (node.type.spec.code) return false;
+      if (node.type.name === 'paragraph' && state.selection.empty && node.textContent.trim() === '$$') {
+        const mathBlock = state.schema.nodes.math_block;
+        if (mathBlock && dispatch) {
+          const pos = $from.before();
+          const mathNode = mathBlock.create({ value: '' });
+          const tr = state.tr.replaceWith(pos, pos + node.nodeSize, mathNode);
+          // 将光标移入公式块
+          const newPos = pos + 1;
+          dispatch(tr.setSelection(TextSelection.near(tr.doc.resolve(newPos))));
         }
         return true;
       }
@@ -171,7 +197,8 @@ function MilkdownInner({
       .use(linkTooltipPlugin)
       .use(mathBlockView)
       .use(math)
-      .use(headingBackspaceKeymap);
+      .use(headingBackspaceKeymap)
+      .use(mathBlockInputKeymap);
   });
 
   // 编辑器初始化完成后注册回调和通知外部
