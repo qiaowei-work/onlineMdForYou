@@ -18,6 +18,7 @@ import { nord } from '@milkdown/theme-nord';
 // 代码块语法高亮
 import { codeBlockComponent, codeBlockConfig } from '@milkdown/kit/component/code-block';
 import { linkTooltipPlugin } from '@milkdown/components/link-tooltip';
+import { tableBlock, tableBlockConfig } from '@milkdown/components/table-block';
 // LaTeX 数学公式
 import { math, mathBlockSchema } from '@milkdown/plugin-math';
 import { MathBlockNodeView } from './MathBlockView';
@@ -197,6 +198,26 @@ function MilkdownInner({
       .use(linkTooltipPlugin)
       .use(mathBlockView)
       .use(math)
+      .use(tableBlock)
+      .config((ctx) => {
+        ctx.update(tableBlockConfig.key, (prev) => ({
+          ...prev,
+          renderButton: (type) => {
+            const icons: Record<string, string> = {
+              add_row: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>',
+              add_col: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>',
+              delete_row: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>',
+              delete_col: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>',
+              align_col_left: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 6H3"/><path d="M15 12H3"/><path d="M17 18H3"/></svg>',
+              align_col_center: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6H6"/><path d="M21 12H3"/><path d="M16 18H8"/></svg>',
+              align_col_right: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 6H9"/><path d="M21 12H3"/><path d="M21 18H7"/></svg>',
+              col_drag_handle: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></svg>',
+              row_drag_handle: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="9" r="1"/><circle cx="6" cy="15" r="1"/><circle cx="12" cy="9" r="1"/><circle cx="12" cy="15" r="1"/><circle cx="18" cy="9" r="1"/><circle cx="18" cy="15" r="1"/></svg>',
+            };
+            return icons[type] || '';
+          },
+        }));
+      })
       .use(headingBackspaceKeymap)
       .use(mathBlockInputKeymap);
   });
