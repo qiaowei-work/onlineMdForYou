@@ -77,7 +77,10 @@ function App() {
   const [markdown, setMarkdown] = useState(DEFAULT_MARKDOWN);
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
-  const [currentArticleId, setCurrentArticleId] = useState<number | null>(null);
+  const [currentArticleId, setCurrentArticleId] = useState<number | null>(() => {
+    const saved = localStorage.getItem('lastArticleId');
+    return saved ? Number(saved) : null;
+  });
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
   const [exportOpen, setExportOpen] = useState(false);
 
@@ -89,6 +92,14 @@ function App() {
   }, [exportOpen]);
 
   const editorRef = useRef<MilkdownEditorHandle>(null);
+
+  // 页面加载时恢复上次访问的文章
+  useEffect(() => {
+    const savedId = localStorage.getItem('lastArticleId');
+    if (savedId) {
+      handleSelectArticle(Number(savedId));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 侧边栏点击文章 → 加载内容
   const handleSelectArticle = useCallback(async (id: number) => {
@@ -111,9 +122,24 @@ function App() {
     } catch { /* ignore */ }
   }, []);
 
+  // 记住最后访问的文章
+  useEffect(() => {
+    if (currentArticleId != null) {
+      localStorage.setItem('lastArticleId', String(currentArticleId));
+    } else {
+      localStorage.removeItem('lastArticleId');
+    }
+  }, [currentArticleId]);
+
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
+
+  // 关闭拼写检查
+  useEffect(() => {
+    const el = document.querySelector('.ProseMirror');
+    if (el) el.setAttribute('spellcheck', 'false');
+  });
 
   useEffect(() => {
     const text = markdown.trim();
