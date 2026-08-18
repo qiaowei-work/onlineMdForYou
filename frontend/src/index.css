@@ -767,6 +767,7 @@
   padding: 4rem 5rem;
   width: 64rem;
   min-height: calc(100vh - 4rem);
+  zoom: 0.8;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
